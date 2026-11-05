@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <title>Lumen — Budget</title>
 <meta name="description" content="A glassy, local-first budget tracker for organizing your income." />
 <meta name="theme-color" content="#07070c" />
@@ -591,6 +591,10 @@
     .wrap { position: fixed; inset: 0; max-width: none; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .wrap::-webkit-scrollbar { display: none; }
     .scroll-ind { display: block; }
+    /* iOS zooms into any field with text under 16px when you tap it; 16px everywhere prevents that */
+    input, select, textarea, .input, .search input, .imp-row select, textarea.input { font-size: 16px !important; }
+    .amount-in input { font-size: 48px !important; }
+    #cEmoji { font-size: 22px !important; }
     /* Sticky offsets inside a scroll container are measured from its padding edge, which already
        includes the status-bar inset, so don't add it a second time */
     nav.top { top: -4px; }
@@ -987,7 +991,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.11';
+  const APP_VERSION = '1.12';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
