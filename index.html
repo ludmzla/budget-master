@@ -517,14 +517,42 @@
   .reveal { opacity: 0; transform: translateY(18px); animation: rise .9s var(--ease) forwards; }
   footer { text-align: center; color: var(--faint); font-size: 12px; margin-top: 40px; }
 
-  .fab { display: none; }
+  /* ---------- Mobile tab bar ---------- */
+  .tabbar { display: none; }
   @media (max-width: 720px) {
-    .wrap { padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(96px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+    .tabbar {
+      display: flex; gap: 10px; align-items: center; position: fixed; z-index: 30;
+      left: max(14px, env(safe-area-inset-left, 0px)); right: max(14px, env(safe-area-inset-right, 0px));
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+    .tabs { flex: 1; display: flex; padding: 6px; border-radius: 999px; position: relative; background: var(--nav-bg); }
+    .tab-pill { position: absolute; top: 6px; bottom: 6px; border-radius: 999px; background: rgba(var(--ink), .09); transition: left .45s var(--ease), width .45s var(--ease); }
+    .tab { flex: 1; position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 0 6px; border-radius: 999px; color: var(--text); font-size: 10.5px; font-weight: 500; transition: color .25s, transform .2s var(--ease); -webkit-tap-highlight-color: transparent; }
+    .tab svg { width: 23px; height: 23px; }
+    .tab:active { transform: scale(.92); }
+    .tab.on { color: var(--accent-2); }
+    .tab-add {
+      flex: none; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; color: var(--on-solid);
+      background: var(--solid-grad); box-shadow: 0 10px 30px -8px rgba(124,58,237,.6); -webkit-tap-highlight-color: transparent; transition: transform .2s var(--ease);
+    }
+    .tab-add:active { transform: scale(.92); }
+    .tab-add svg { width: 24px; height: 24px; }
+    /* Show one tab's cards at a time */
+    main > [data-tab] { display: none; }
+    main[data-view="home"] > [data-tab="home"], main[data-view="plan"] > [data-tab="plan"], main[data-view="activity"] > [data-tab="activity"],
+    main[data-view="trends"] > [data-tab="trends"], main[data-view="goals"] > [data-tab="goals"] { display: block; }
+    main[data-view="home"] > .ring-card { display: flex; }
+    main[data-view="trends"] > .flow-card { display: flex; }
+    .bars { height: 230px; flex: none; }
+    main[data-view="home"] > .backup-banner { display: flex; }
+    .tx-list { max-height: none; overflow: visible; }
+    footer { display: none; }
+  }
+  @media (max-width: 720px) {
+    .wrap { padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(110px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
     nav.top { top: calc(8px + env(safe-area-inset-top, 0px)); padding-left: 14px; }
     .month-switch span { min-width: 92px; font-size: 13px; }
     .nav-add, .logo-text { display: none; }
-    .fab { display: grid; position: fixed; right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 30; width: 58px; height: 58px; border-radius: 50%; padding: 0; place-items: center; }
-    .fab svg { width: 22px; height: 22px; }
     .search input { width: 100px; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -551,10 +579,10 @@
     <button class="btn btn-primary nav-add" data-add><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Add entry <kbd>N</kbd></button>
   </nav>
 
-  <main class="grid">
-    <div class="glass backup-banner" id="backupBanner" hidden></div>
+  <main class="grid" id="main" data-view="home">
+    <div class="glass backup-banner" id="backupBanner" data-tab="home" hidden></div>
     <!-- Hero -->
-    <section class="glass hero span-8 reveal" style="animation-delay:.05s">
+    <section data-tab="home" class="glass hero span-8 reveal" style="animation-delay:.05s">
       <div class="hero-orb"></div>
       <span class="eyebrow"><b id="dayBadge">Day 1</b><span id="daysLeft">of the month</span></span>
       <h1 class="serif" id="headline">Your money, <em>in focus.</em></h1>
@@ -574,7 +602,7 @@
     </section>
 
     <!-- Savings rate ring -->
-    <section class="glass card span-4 ring-card reveal" style="animation-delay:.12s">
+    <section data-tab="home" class="glass card span-4 ring-card reveal" style="animation-delay:.12s">
       <div class="card-head"><div class="card-title"><span class="dot"></span>Savings rate</div></div>
       <div class="ring-wrap">
         <svg viewBox="0 0 120 120">
@@ -592,7 +620,7 @@
     </section>
 
     <!-- Income plan -->
-    <section class="glass card span-8 reveal" id="planCard" style="animation-delay:.18s">
+    <section data-tab="plan" class="glass card span-8 reveal" id="planCard" style="animation-delay:.18s">
       <div class="card-head">
         <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span>Income plan · give every euro a job</div>
         <div style="display:flex;gap:8px;align-items:center">
@@ -606,7 +634,7 @@
     </section>
 
     <!-- Income sources -->
-    <section class="glass card span-4 reveal" style="animation-delay:.24s">
+    <section data-tab="plan" class="glass card span-4 reveal" style="animation-delay:.24s">
       <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--accent-2);box-shadow:0 0 10px var(--accent-2)"></span>Where income comes from</div></div>
       <div class="donut-row">
         <div class="donut">
@@ -618,7 +646,7 @@
     </section>
 
     <!-- Cash flow -->
-    <section class="glass card span-7 reveal flow-card" style="animation-delay:.3s">
+    <section data-tab="trends" class="glass card span-7 reveal flow-card" style="animation-delay:.3s">
       <div class="card-head">
         <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span>Cash flow · last 6 months</div>
         <div class="legend-inline"><span><i style="background:var(--income)"></i>Income</span><span><i style="background:var(--expense)"></i>Spent</span></div>
@@ -627,13 +655,13 @@
     </section>
 
     <!-- Category spend -->
-    <section class="glass card span-5 reveal" style="animation-delay:.36s">
+    <section data-tab="trends" class="glass card span-5 reveal" style="animation-delay:.36s">
       <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--expense);box-shadow:0 0 10px var(--expense)"></span>Top spending</div></div>
       <div class="cats" id="cats"></div>
     </section>
 
     <!-- Transactions -->
-    <section class="glass card span-7 reveal" style="animation-delay:.42s">
+    <section data-tab="activity" class="glass card span-7 reveal" style="animation-delay:.42s">
       <div class="card-head" style="flex-wrap:wrap">
         <div class="card-title"><span class="dot"></span>Activity</div>
         <div class="tx-tools">
@@ -646,7 +674,7 @@
     </section>
 
     <!-- Goals -->
-    <section class="glass card span-5 reveal" style="animation-delay:.48s">
+    <section data-tab="goals" class="glass card span-5 reveal" style="animation-delay:.48s">
       <div class="card-head"><div class="card-title"><span class="dot" style="background:#f472b6;box-shadow:0 0 10px #f472b6"></span>Savings goals</div></div>
       <div class="goals" id="goals"></div>
     </section>
@@ -655,7 +683,16 @@
   <footer>Lumen keeps everything in this browser — nothing leaves your device. Press <span class="mono">N</span> to add an entry.</footer>
 </div>
 
-<button class="btn btn-primary fab" data-add aria-label="Add entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>
+<nav class="tabbar" aria-label="Sections">
+  <div class="tabs glass" id="tabs" role="tablist"><span class="tab-pill"></span>
+    <button class="tab" role="tab" data-go="home" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
+    <button class="tab" role="tab" data-go="plan" aria-label="Plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg><span>Plan</span></button>
+    <button class="tab" role="tab" data-go="activity" aria-label="Activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r=".6"/><circle cx="3.5" cy="12" r=".6"/><circle cx="3.5" cy="18" r=".6"/></svg><span>Activity</span></button>
+    <button class="tab" role="tab" data-go="trends" aria-label="Trends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-11"/></svg><span>Trends</span></button>
+    <button class="tab" role="tab" data-go="goals" aria-label="Goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg><span>Goals</span></button>
+  </div>
+  <button class="tab-add glass" data-add aria-label="Add entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+</nav>
 
 <!-- Transaction modal -->
 <div class="scrim" id="txModal">
@@ -1522,6 +1559,32 @@
     })();
   }
 
+  /* ================= Mobile tabs ================= */
+  const TABS = ['home', 'plan', 'activity', 'trends', 'goals'];
+  const mainEl = document.getElementById('main');
+  function placeTabPill() {
+    const on = document.querySelector('.tab.on'), pill = document.querySelector('.tab-pill');
+    if (on && pill && on.offsetWidth) { pill.style.left = on.offsetLeft + 'px'; pill.style.width = on.offsetWidth + 'px'; }
+  }
+  function goTab(t, opts = {}) {
+    if (!TABS.includes(t)) t = 'home';
+    const changed = mainEl.dataset.view !== t;
+    mainEl.dataset.view = t;
+    document.querySelectorAll('.tab').forEach(b => { const on = b.dataset.go === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    placeTabPill();
+    try { localStorage.setItem('lumen-tab', t); } catch (e) {}
+    if (changed && !opts.quiet && matchMedia('(max-width: 720px)').matches) {
+      window.scrollTo({ top: 0 });
+      // replay the chart animations on the newly shown tab
+      if (t === 'trends') { renderBars(); renderCats(summary(view)); }
+      if (t === 'plan') { renderPlan(summary(view)); renderDonut(summary(view)); }
+      if (t === 'goals') renderGoals();
+      if (t === 'activity') setSeg(filterSeg, txFilter, 'f');
+    }
+  }
+  document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) goTab(b.dataset.go); });
+  window.addEventListener('resize', placeTabPill);
+
   /* ================= Theme ================= */
   const themeMQ = matchMedia('(prefers-color-scheme: light)');
   const getMode = () => { try { return localStorage.getItem('lumen-theme') || 'system'; } catch (e) { return 'system'; } };
@@ -1793,9 +1856,10 @@
   if (state.currency === 'USD' && !state.currencyChosen) { state.currency = 'EUR'; state.currencyChosen = true; save(); }
   if (!state.payday) { state.payday = { on: true, day: 25, scope: 'salary' }; save(); }
   syncTheme();
+  try { goTab(localStorage.getItem('lumen-tab') || 'home', { quiet: true }); } catch (e) { goTab('home', { quiet: true }); }
   render();
   renderBackupBanner();
-  requestAnimationFrame(() => setSeg(filterSeg, 'all', 'f'));
+  requestAnimationFrame(() => { setSeg(filterSeg, 'all', 'f'); placeTabPill(); });
   window.addEventListener('resize', () => setSeg(filterSeg, txFilter, 'f'));
 })();
 </script>
