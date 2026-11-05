@@ -354,6 +354,10 @@
   .settings-list .btn { justify-content: flex-start; width: 100%; height: 44px; border-radius: 14px; }
   .danger { color: var(--expense); }
   .modal.wide { width: min(820px, 100%); }
+  .payday-box { padding: 14px; border-radius: 16px; background: rgba(255,255,255,.04); border: 1px solid var(--stroke); }
+  .payday-box b { color: var(--text); font-weight: 500; }
+  .pd-example { font-size: 12px; color: var(--faint); margin-top: 10px; line-height: 1.5; }
+  .shift-tag { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 6px; margin-left: 6px; color: var(--income); background: rgba(94,234,212,.12); }
   .imp-help { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 16px; }
   .imp-help ol { padding-left: 18px; display: grid; gap: 4px; margin-top: 8px; }
   .imp-help b { color: var(--text); font-weight: 500; }
@@ -552,6 +556,7 @@
     <div class="field"><label for="fNote">Description</label><input class="input" id="fNote" placeholder="e.g. Monthly rent, Client invoice…" /></div>
     <div class="row2">
       <div class="field"><label for="fDate">Date</label><input class="input" id="fDate" type="date" required /></div>
+      <div class="field" id="bmField" style="display:none"><label for="fBm">Counts toward</label><select class="input" id="fBm"></select></div>
       <div class="field" id="goalField" style="display:none"><label for="fGoal">Put toward goal</label><select class="input" id="fGoal"></select></div>
     </div>
     <div class="modal-actions">
@@ -638,6 +643,17 @@
         <option value="BRL">BRL — Brazilian Real</option><option value="CAD">CAD — Canadian Dollar</option><option value="AUD">AUD — Australian Dollar</option>
         <option value="JPY">JPY — Japanese Yen</option><option value="CHF">CHF — Swiss Franc</option><option value="MXN">MXN — Mexican Peso</option><option value="INR">INR — Indian Rupee</option>
       </select>
+    </div>
+    <div class="field">
+      <label>Payday</label>
+      <div class="payday-box">
+        <label class="check" style="margin:0"><input type="checkbox" id="pdOn" /> <span>Salary paid at the end of the month funds the <b>next</b> month</span></label>
+        <div class="row2" id="pdOpts" style="margin-top:12px">
+          <div><label for="pdDay" style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px">Counts as next month from day</label><select class="input" id="pdDay"></select></div>
+          <div><label for="pdScope" style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px">Applies to</label><select class="input" id="pdScope"><option value="salary">Salary only</option><option value="all">All income</option></select></div>
+        </div>
+        <p class="pd-example" id="pdExample"></p>
+      </div>
     </div>
     <div class="settings-list">
       <button class="btn btn-ghost" id="exportJson">⤓ &nbsp;Export backup (JSON)</button>
@@ -746,6 +762,7 @@
     }
     return {
       currency: 'USD',
+      payday: { on: true, day: 25, scope: 'salary' },
       split: [50, 30, 20],
       txns,
       goals: [
@@ -788,7 +805,23 @@
   };
 
   /* ================= Calculations ================= */
-  const inMonth = key => state.txns.filter(t => t.date.startsWith(key));
+  // Budget month: salary that lands at the end of a month pays for the next one
+  function autoShift(t) {
+    const pd = state.payday;
+    if (!pd || !pd.on || t.type !== 'income') return false;
+    if (pd.scope !== 'all' && t.category !== 'salary') return false;
+    const [y, m, d] = t.date.split('-').map(Number);
+    const last = new Date(y, m, 0).getDate();
+    return d >= Math.min(pd.day, last);
+  }
+  function budgetMonthOf(t) {
+    const own = t.date.slice(0, 7);
+    if (t.type !== 'income') return own;
+    if (t.bm === 'same') return own;
+    if (t.bm === 'next') return shiftMonth(own, 1);
+    return autoShift(t) ? shiftMonth(own, 1) : own;
+  }
+  const inMonth = key => state.txns.filter(t => budgetMonthOf(t) === key);
   function summary(key) {
     const list = inMonth(key);
     const income = list.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
@@ -998,7 +1031,7 @@
           const c = catById(t.category);
           return `<div class="tx" data-id="${t.id}" style="--c:${c.c};animation-delay:${Math.min(i++, 14) * 25}ms">
             <div class="e">${c.e}</div>
-            <div class="info"><div class="t">${esc(t.note || c.name)}</div><div class="s">${c.name}${t.type === 'expense' ? ' · ' + (BUCKETS.find(b => b.id === c.b)?.name || '') : ''}</div></div>
+            <div class="info"><div class="t">${esc(t.note || c.name)}</div><div class="s">${c.name}${t.type === 'expense' ? ' · ' + (BUCKETS.find(b => b.id === c.b)?.name || '') : ''}${budgetMonthOf(t) !== t.date.slice(0, 7) ? `<span class="shift-tag">paid ${new Date(t.date + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} · for ${monthName(budgetMonthOf(t), 'long').split(' ')[0]}</span>` : ''}</div></div>
             <div class="a ${t.type === 'income' ? 'inc' : ''}">${t.type === 'income' ? '+' : '−'}${fmt(t.amount)}</div>
             <button class="icon-btn del" data-del="${t.id}" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
           </div>`;
@@ -1045,11 +1078,26 @@
     const cats = CATS[txType];
     if (!cats.find(c => c.id === txCat)) txCat = cats[0].id;
     document.getElementById('catGrid').innerHTML = cats.map(c => `<button type="button" style="--c:${c.c}" class="${c.id === txCat ? 'on' : ''}" data-cat="${c.id}">${c.e} ${c.name}</button>`).join('');
+    renderBm();
     const showGoal = txType === 'expense' && txCat === 'savings' && state.goals.length;
     document.getElementById('goalField').style.display = showGoal ? '' : 'none';
     document.getElementById('fGoal').innerHTML = `<option value="">— None —</option>` + state.goals.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
   }
+  let txBm = '';
+  function renderBm() {
+    const field = document.getElementById('bmField');
+    const date = document.getElementById('fDate').value;
+    if (txType !== 'income' || !date) { field.style.display = 'none'; return; }
+    field.style.display = '';
+    const own = date.slice(0, 7), next = shiftMonth(own, 1);
+    const autoM = autoShift({ type: 'income', category: txCat, date }) ? next : own;
+    const mn = k => monthName(k, 'long').split(' ')[0];
+    document.getElementById('fBm').innerHTML =
+      `<option value="">Automatic (${mn(autoM)})</option><option value="same">${mn(own)}</option><option value="next">${mn(next)}</option>`;
+    document.getElementById('fBm').value = txBm;
+  }
   function openTx(t) {
+    txBm = t && t.bm ? t.bm : '';
     editingTx = t || null;
     txType = t ? t.type : 'expense';
     txCat = t ? t.category : null;
@@ -1059,6 +1107,7 @@
     const today = new Date();
     const def = view === monthKey(today) ? isoDate(today) : view + '-01';
     document.getElementById('fDate').value = t ? t.date : def;
+    document.getElementById('bmField').style.display = 'none';
     document.getElementById('txDelete').style.display = t ? '' : 'none';
     open('txModal');
     setSeg(document.getElementById('typeSeg'), txType, 't');
@@ -1078,7 +1127,7 @@
     e.preventDefault();
     const amount = Math.round(parseFloat(document.getElementById('fAmount').value) * 100) / 100;
     if (!(amount > 0)) return toast('Enter an amount above zero', '⚠️');
-    const data = { type: txType, category: txCat, amount, date: document.getElementById('fDate').value, note: document.getElementById('fNote').value.trim() };
+    const data = { type: txType, category: txCat, amount, date: document.getElementById('fDate').value, note: document.getElementById('fNote').value.trim(), bm: txType === 'income' ? (document.getElementById('fBm').value || undefined) : undefined };
     if (editingTx) {
       if (editingTx.payee && editingTx.category !== data.category) { state.rules = state.rules || {}; state.rules[normPayee(editingTx.payee)] = data.category; }
       Object.assign(editingTx, data);
@@ -1088,7 +1137,7 @@
       const gid = document.getElementById('fGoal').value;
       if (txType === 'expense' && txCat === 'savings' && gid) { const g = state.goals.find(g => g.id === gid); if (g) g.saved += amount; }
     }
-    const k = data.date.slice(0, 7);
+    const k = budgetMonthOf(data);
     if (k !== view) view = k;
     save(); close(e.target); render();
     toast(editingTx ? 'Entry updated' : (txType === 'income' ? `+${fmt(amount)} income logged` : `${fmt(amount)} expense logged`), txType === 'income' ? '💸' : '✓');
@@ -1190,7 +1239,26 @@
   });
 
   // Settings
-  document.getElementById('openSettings').addEventListener('click', () => { document.getElementById('sCurrency').value = state.currency; open('settingsModal'); });
+  document.getElementById('fBm').addEventListener('change', e => { txBm = e.target.value; });
+  document.getElementById('fDate').addEventListener('change', renderBm);
+  function renderPayday() {
+    const pd = state.payday;
+    document.getElementById('pdOn').checked = pd.on;
+    document.getElementById('pdDay').innerHTML = Array.from({ length: 12 }, (_, i) => 20 + i).map(d => `<option value="${d}" ${d === pd.day ? 'selected' : ''}>${d}${d === 31 ? ' (last day only)' : ''}</option>`).join('');
+    document.getElementById('pdScope').value = pd.scope;
+    document.getElementById('pdOpts').style.opacity = pd.on ? 1 : .4;
+    document.getElementById('pdOpts').style.pointerEvents = pd.on ? '' : 'none';
+    const [y, m] = monthKey(new Date()).split('-').map(Number);
+    const prevName = new Date(y, m - 2, 1).toLocaleDateString(undefined, { month: 'long' }), curName = new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long' });
+    document.getElementById('pdExample').textContent = pd.on
+      ? `Example: ${pd.scope === 'all' ? 'income' : 'salary'} received on ${prevName} ${Math.max(pd.day, 28)} counts toward ${curName}'s budget. You can override this for a single entry by tapping it.`
+      : 'Income counts toward the month it arrives in.';
+  }
+  ['pdOn', 'pdDay', 'pdScope'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+    state.payday = { on: document.getElementById('pdOn').checked, day: +document.getElementById('pdDay').value, scope: document.getElementById('pdScope').value };
+    save(); renderPayday(); render();
+  }));
+  document.getElementById('openSettings').addEventListener('click', () => { document.getElementById('sCurrency').value = state.currency; renderPayday(); open('settingsModal'); });
   document.getElementById('sCurrency').addEventListener('change', e => { state.currency = e.target.value; save(); render(); });
   const download = (name, content, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
   document.getElementById('exportJson').addEventListener('click', () => { download(`lumen-backup-${isoDate(new Date())}.json`, JSON.stringify(state, null, 2), 'application/json'); toast('Backup downloaded', '⤓'); });
@@ -1205,7 +1273,7 @@
     try {
       const data = JSON.parse(await f.text());
       if (!Array.isArray(data.txns)) throw 0;
-      state = { currency: data.currency || 'USD', split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {} };
+      state = { currency: data.currency || 'USD', split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {}, payday: data.payday || { on: true, day: 25, scope: 'salary' } };
       save(); render(); toast('Backup restored', '✓');
     } catch (err) { toast('That file doesn’t look like a Lumen backup', '⚠️'); }
     e.target.value = '';
@@ -1223,7 +1291,7 @@
   });
   document.getElementById('clearAll').addEventListener('click', e => {
     if (!armed(e.currentTarget, 'Tap again to erase everything (can’t be undone)')) return;
-    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [], rules: state.rules || {} }; view = monthKey(new Date()); save(); render(); close(e.target); toast('Fresh start', '✓');
+    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [], rules: state.rules || {}, payday: state.payday }; view = monthKey(new Date()); save(); render(); close(e.target); toast('Fresh start', '✓');
   });
 
   // Month nav
@@ -1491,7 +1559,7 @@
       if (r.userCat && r.payee) state.rules[normPayee(r.payee)] = r.category;
     });
     if (!document.getElementById('impCurWrap').hidden && document.getElementById('impCur').checked) state.currency = imp.currency;
-    view = chosen[0].date.slice(0, 7);
+    view = budgetMonthOf(state.txns[state.txns.length - chosen.length]);
     save(); close(e.target); render();
     toast(`Imported ${chosen.length} transactions`, '🏦');
   });
@@ -1511,6 +1579,7 @@
 
   /* ================= Boot ================= */
   state = load();
+  if (!state.payday) { state.payday = { on: true, day: 25, scope: 'salary' }; save(); }
   render();
   requestAnimationFrame(() => setSeg(filterSeg, 'all', 'f'));
   window.addEventListener('resize', () => setSeg(filterSeg, txFilter, 'f'));
