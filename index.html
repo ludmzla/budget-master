@@ -1006,7 +1006,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.14';
+  const APP_VERSION = '1.15';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
@@ -1023,7 +1023,8 @@
     try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {}
     return demoState();
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  let dataVer = 0;
+  function save() { dataVer++; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
   function demoState() {
     let seed = 7;
@@ -1109,13 +1110,42 @@
     const last = new Date(y, m, 0).getDate();
     return d >= Math.min(pd.day, last);
   }
-  function budgetMonthOf(t) {
-    const own = t.date.slice(0, 7);
-    if (t.type !== 'income') return own;
-    if (t.bm === 'same') return own;
-    if (t.bm === 'next') return shiftMonth(own, 1);
-    return autoShift(t) ? shiftMonth(own, 1) : own;
+  // With the payday setting on, a budget month runs from the day the salary lands until the next salary,
+  // for spending as well as income. Without salary data it falls back to the payday day (or calendar months).
+  const inScope = t => t.type === 'income' && (state.payday.scope === 'all' || t.category === 'salary');
+  let periodCache = { ver: -1, starts: {} };
+  function periodStart(key) {
+    const pd = state.payday;
+    if (!pd || !pd.on) return key + '-01';
+    if (periodCache.ver !== dataVer) periodCache = { ver: dataVer, starts: {} };
+    if (periodCache.starts[key]) return periodCache.starts[key];
+    const prev = shiftMonth(key, -1);
+    let start = null, anySalary = false, earlyInMonth = false;
+    for (const t of state.txns) {
+      if (t.type !== 'income') continue;
+      const own = t.date.slice(0, 7);
+      const shifted = t.bm === 'next' || (t.bm !== 'same' && autoShift(t));
+      if (inScope(t)) anySalary = true;
+      if (own === prev && shifted && (inScope(t) || t.bm === 'next')) { if (!start || t.date < start) start = t.date; }
+      if (own === key && inScope(t) && !shifted) earlyInMonth = true;
+    }
+    if (!start) {
+      if (!anySalary || earlyInMonth) start = key + '-01';
+      else { const [y, m] = prev.split('-').map(Number); start = `${prev}-${String(Math.min(pd.day, new Date(y, m, 0).getDate())).padStart(2, '0')}`; }
+    }
+    return (periodCache.starts[key] = start);
   }
+  function budgetMonthOf(t) {
+    const own = t.date.slice(0, 7), next = shiftMonth(own, 1);
+    if (t.type === 'income' && t.bm === 'same') return own;
+    if (t.type === 'income' && t.bm === 'next') return next;
+    if (!state.payday || !state.payday.on) return own;
+    return t.date >= periodStart(next) ? next : own;
+  }
+  const currentBudgetMonth = () => budgetMonthOf({ type: 'expense', date: isoDate(new Date()) });
+  const dayDiff = (a, b) => Math.round((new Date(b + 'T00:00') - new Date(a + 'T00:00')) / 864e5);
+  // Days left in the budget month that contains today (including today)
+  function periodDaysLeft(key) { return Math.max(1, dayDiff(isoDate(new Date()), periodStart(shiftMonth(key, 1)))); }
   const inMonth = key => state.txns.filter(t => budgetMonthOf(t) === key);
   // Order transactions as they happened (date, then position in the bank file)
   const chron = (a, b) => a.date.localeCompare(b.date) || ((a.ord ?? 0) - (b.ord ?? 0));
@@ -1162,7 +1192,7 @@
     const s = summary(view);
     const prev = summary(shiftMonth(view, -1));
     const today = new Date();
-    const isCurrent = view === monthKey(today);
+    const isCurrent = view === currentBudgetMonth();
     const [vy, vm] = view.split('-').map(Number);
     const daysInMonth = new Date(vy, vm, 0).getDate();
 
@@ -1174,8 +1204,12 @@
     const hour = today.getHours();
     const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
     if (isCurrent) {
-      document.getElementById('dayBadge').textContent = `Day ${today.getDate()}`;
-      document.getElementById('daysLeft').textContent = `${daysInMonth - today.getDate()} days left in ${monthName(view, 'long').split(' ')[0]}`;
+      const pStart = periodStart(view), nStart = periodStart(shiftMonth(view, 1));
+      const shortD = iso => new Date(iso + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+      document.getElementById('dayBadge').textContent = `Day ${dayDiff(pStart, isoDate(today)) + 1}`;
+      document.getElementById('daysLeft').textContent = state.payday && state.payday.on && pStart !== view + '-01'
+        ? `${periodDaysLeft(view)} days left · ${shortD(pStart)} – ${shortD(isoDate(new Date(new Date(nStart + 'T00:00') - 864e5)))}`
+        : `${daysInMonth - today.getDate()} days left in ${monthName(view, 'long').split(' ')[0]}`;
     } else {
       document.getElementById('dayBadge').textContent = view < monthKey(today) ? 'Closed' : 'Upcoming';
       document.getElementById('daysLeft').textContent = view < monthKey(today) ? 'Looking back' : 'Planning ahead';
@@ -1235,7 +1269,7 @@
       if (b.id === 'future' || !s.income) return;
       const budget = s.income * split[i] / 100, used = s.byBucket[b.id];
       if (used > budget) out.push({ ic: '⚠️', bg: 'rgba(251,191,36,.15)', t: `<b>${b.name}</b> is ${fmt(used - budget)} over its ${split[i]}% slice.` });
-      else if (isCurrent && used / budget > .8) out.push({ ic: '⏳', bg: 'rgba(251,191,36,.15)', t: `<b>${Math.round(used / budget * 100)}%</b> of ${b.name} used with ${dim - today.getDate()} days to go.` });
+      else if (isCurrent && used / budget > .8) out.push({ ic: '⏳', bg: 'rgba(251,191,36,.15)', t: `<b>${Math.round(used / budget * 100)}%</b> of ${b.name} used with ${periodDaysLeft(view)} days to go.` });
     });
     const futureTarget = s.income * split[2] / 100;
     if (s.income && s.saved >= futureTarget) out.push({ ic: '🌱', bg: 'rgba(94,234,212,.15)', t: `Future-you goal hit: <b>${fmt(s.saved)}</b> saved & invested.` });
@@ -1246,7 +1280,7 @@
     Object.keys(byCat).forEach(k => { if (prevByCat[k] && k !== 'housing') { const d = byCat[k] - prevByCat[k]; if (!best || Math.abs(d) > Math.abs(best.d)) best = { k, d }; } });
     if (best && Math.abs(best.d) > 15) out.push({ ic: best.d > 0 ? '📈' : '📉', bg: best.d > 0 ? 'rgba(251,113,133,.15)' : 'rgba(94,234,212,.15)', t: `${catById(best.k).name} is <b>${best.d > 0 ? 'up' : 'down'} ${fmt(Math.abs(best.d))}</b> from last month.` });
     if (isCurrent && s.left > 0) {
-      const perDay = s.left / Math.max(1, dim - today.getDate() + 1);
+      const perDay = s.left / periodDaysLeft(view);
       out.push({ ic: '☀️', bg: 'rgba(167,139,250,.18)', t: `You can spend about <b>${fmt(perDay)}/day</b> for the rest of the month.` });
     }
     if (!out.length) out.push({ ic: '✨', bg: 'rgba(167,139,250,.18)', t: s.income ? 'Everything is on track. Nice work.' : 'Log your income to unlock insights.' });
@@ -1439,7 +1473,7 @@
     document.getElementById('fAmount').value = t ? t.amount : '';
     document.getElementById('fNote').value = t ? (t.note || '') : '';
     const today = new Date();
-    const def = view === monthKey(today) ? isoDate(today) : view + '-01';
+    const def = view === currentBudgetMonth() ? isoDate(today) : view + '-01';
     document.getElementById('fDate').value = t ? t.date : def;
     document.getElementById('bmField').style.display = 'none';
     document.getElementById('txDelete').style.display = t ? '' : 'none';
@@ -1586,7 +1620,7 @@
     const [y, m] = monthKey(new Date()).split('-').map(Number);
     const prevName = new Date(y, m - 2, 1).toLocaleDateString(undefined, { month: 'long' }), curName = new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long' });
     document.getElementById('pdExample').textContent = pd.on
-      ? `Example: ${pd.scope === 'all' ? 'income' : 'salary'} received on ${prevName} ${Math.max(pd.day, 28)} counts toward ${curName}'s budget. You can override this for a single entry by tapping it.`
+      ? `Example: ${pd.scope === 'all' ? 'income' : 'salary'} received on ${prevName} ${Math.max(pd.day, 28)} starts ${curName}'s budget, and spending from that day on counts toward ${curName} too. You can override a single income entry by tapping it.`
       : 'Income counts toward the month it arrives in.';
   }
   ['pdOn', 'pdDay', 'pdScope'].forEach(id => document.getElementById(id).addEventListener('change', () => {
@@ -1670,7 +1704,7 @@
   }
   document.getElementById('loadDemo').addEventListener('click', e => {
     if (!armed(e.currentTarget, 'Tap again to replace your data with demo data')) return;
-    state = demoState(); view = monthKey(new Date()); save(); render(); close(e.target); toast('Demo data loaded', '✦');
+    state = demoState(); view = currentBudgetMonth(); save(); render(); close(e.target); toast('Demo data loaded', '✦');
   });
   document.getElementById('clearEntries').addEventListener('click', e => {
     if (!armed(e.currentTarget, 'Tap again to clear all entries and goals')) return;
@@ -1683,7 +1717,7 @@
   });
   document.getElementById('clearAll').addEventListener('click', e => {
     if (!armed(e.currentTarget, 'Tap again to erase everything (can’t be undone)')) return;
-    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [], rules: {}, payday: state.payday, customCats: [] }; view = monthKey(new Date()); save(); render(); close(e.target); toast('Fresh start', '✓');
+    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [], rules: {}, payday: state.payday, customCats: [] }; view = currentBudgetMonth(); save(); render(); close(e.target); toast('Fresh start', '✓');
   });
 
   // Month nav
@@ -2185,6 +2219,7 @@
   state.customCats = state.customCats || [];
   if (state.currency === 'USD' && !state.currencyChosen) { state.currency = 'EUR'; state.currencyChosen = true; save(); }
   if (!state.payday) { state.payday = { on: true, day: 25, scope: 'salary' }; save(); }
+  try { view = currentBudgetMonth(); } catch (e) {}
   syncTheme();
   try { goTab(localStorage.getItem('lumen-tab') || 'home', { quiet: true }); } catch (e) { goTab('home', { quiet: true }); }
   render();
