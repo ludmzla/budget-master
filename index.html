@@ -450,11 +450,27 @@
   .cat-grid button { font-size: 13px; padding: 7px 12px; border-radius: 999px; background: rgba(var(--ink),.05); border: 1px solid var(--stroke); color: var(--muted); transition: all .2s; }
   .cat-grid button:hover { color: var(--text); }
   .cat-grid button.on { background: color-mix(in srgb, var(--c) 25%, transparent); border-color: var(--c); color: var(--text); }
+  .cat-grid button.add-cat { border-style: dashed; color: var(--accent); }
+  .name-row { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 12px; }
+  .name-row > * { min-width: 0; }
+  #cEmoji { text-align: center; font-size: 22px; padding: 0 6px; }
+  .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px; }
+  .emoji-grid button { height: 40px; border-radius: 12px; font-size: 20px; background: rgba(var(--ink), .05); border: 1px solid transparent; transition: background .15s, border-color .15s; }
+  .emoji-grid button.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent); }
+  .ccat-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .ccat { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: rgba(var(--ink), .04); border: 1px solid var(--stroke); }
+  .ccat .e { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; font-size: 18px; flex: none; background: color-mix(in srgb, var(--c) 20%, transparent); }
+  .ccat .n { flex: 1; min-width: 0; font-size: 14px; }
+  .ccat .n small { display: block; color: var(--faint); font-size: 12px; margin-top: 1px; }
+  .ccat button { font-size: 13px; color: var(--accent-2); padding: 6px 8px; }
+  #catModal { z-index: 56; }  /* opens on top of the entry sheet and Settings */
+  .ccat-empty { font-size: 13px; color: var(--faint); padding: 2px 0 6px; }
   .row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
   .row2 > * { min-width: 0; }
   /* iOS gives date inputs a built-in minimum width that overflows narrow columns */
   input[type="date"].input { display: block; width: 100%; min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; text-align: left; }
-  input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
+  input[type="date"].input { line-height: 42px; padding-top: 0; padding-bottom: 0; }
+  input[type="date"].input::-webkit-date-and-time-value { text-align: left; margin: 0; line-height: 42px; }
   .modal { overflow-x: hidden; }
   select.input { text-overflow: ellipsis; white-space: nowrap; overflow: hidden; padding-right: 34px; }
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
@@ -779,6 +795,28 @@
   </form>
 </div>
 
+<!-- Category modal -->
+<div class="scrim" id="catModal">
+  <form class="modal glass" id="catForm" autocomplete="off">
+    <h3 id="catModalTitle">New <em>category</em></h3>
+    <div class="seg" id="catTypeSeg"><span class="pill"></span><button type="button" data-ct="expense" class="on">Expense</button><button type="button" data-ct="income">Income</button></div>
+    <div class="name-row">
+      <div class="field"><label for="cName">Name</label><input class="input" id="cName" maxlength="24" placeholder="e.g. Pets, Gym, Kids" required /></div>
+      <div class="field"><label for="cEmoji">Icon</label><input class="input" id="cEmoji" maxlength="8" placeholder="🐾" /></div>
+    </div>
+    <div class="field"><div class="emoji-grid" id="cEmojis"></div></div>
+    <div class="field"><label>Color</label><div class="cat-grid" id="cColors"></div></div>
+    <div class="field" id="cBucketField"><label>Counts toward</label>
+      <div class="seg" id="cBucketSeg" style="margin:0"><span class="pill"></span><button type="button" data-cb="needs">Needs</button><button type="button" data-cb="wants">Wants</button><button type="button" data-cb="future">Future you</button></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost danger" id="catDelete" style="margin-right:auto;display:none">Delete</button>
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+  </form>
+</div>
+
 <!-- Goal modal -->
 <div class="scrim" id="goalModal">
   <form class="modal glass" id="goalForm" autocomplete="off">
@@ -870,6 +908,10 @@
         <p class="pd-example" id="pdExample"></p>
       </div>
     </div>
+    <div class="field"><label>Your categories</label>
+      <div class="ccat-list" id="customCatList"></div>
+      <button type="button" class="btn btn-ghost" id="addCatBtn" style="width:100%;justify-content:center;height:44px;border-radius:14px">＋ New category</button>
+    </div>
     <div class="settings-list">
       <button class="btn btn-ghost" id="exportJson">☁️ &nbsp;Save backup to iCloud Drive / Files</button>
       <button class="btn btn-ghost" id="copyBackup">⧉ &nbsp;Copy backup (to move your data)</button>
@@ -945,7 +987,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.10';
+  const APP_VERSION = '1.11';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
@@ -1068,6 +1110,7 @@
 
   /* ================= Render ================= */
   function render() {
+    syncCustomCats();
     const s = summary(view);
     const prev = summary(shiftMonth(view, -1));
     const today = new Date();
@@ -1312,7 +1355,7 @@
   function renderCatGrid() {
     const cats = CATS[txType];
     if (!cats.find(c => c.id === txCat)) txCat = cats[0].id;
-    document.getElementById('catGrid').innerHTML = cats.map(c => `<button type="button" style="--c:${c.c}" class="${c.id === txCat ? 'on' : ''}" data-cat="${c.id}">${c.e} ${c.name}</button>`).join('');
+    document.getElementById('catGrid').innerHTML = cats.map(c => `<button type="button" style="--c:${c.c}" class="${c.id === txCat ? 'on' : ''}" data-cat="${c.id}">${c.e} ${esc(c.name)}</button>`).join('') + `<button type="button" class="add-cat" data-newcat>＋ New</button>`;
     renderBm();
     const showGoal = txType === 'expense' && txCat === 'savings' && state.goals.length;
     document.getElementById('goalField').style.display = showGoal ? '' : 'none';
@@ -1356,6 +1399,7 @@
   });
   document.getElementById('catGrid').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.newcat !== undefined) return openCat(null, true);
     txCat = b.dataset.cat; renderCatGrid();
   });
   document.getElementById('txForm').addEventListener('submit', e => {
@@ -1494,7 +1538,7 @@
     save(); renderPayday(); render();
   }));
   document.getElementById('openSettings').addEventListener('click', async () => {
-    document.getElementById('sCurrency').value = state.currency; renderPayday(); open('settingsModal');
+    document.getElementById('sCurrency').value = state.currency; renderPayday(); renderCustomCatList(); open('settingsModal');
     requestAnimationFrame(() => setSeg(document.getElementById('themeSeg'), getMode(), 'th'));
     const note = document.getElementById('storeNote');
     const last = state.lastBackup ? new Date(state.lastBackup).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : 'never';
@@ -1530,7 +1574,7 @@
   });
   function restoreBackup(data) {
     if (!data || !Array.isArray(data.txns)) throw new Error('bad backup');
-    state = { currency: (data.currency === 'USD' && !data.currencyChosen) ? 'EUR' : (data.currency || 'EUR'), currencyChosen: true, split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {}, payday: data.payday || { on: true, day: 25, scope: 'salary' }, lastBackup: data.lastBackup };
+    state = { currency: (data.currency === 'USD' && !data.currencyChosen) ? 'EUR' : (data.currency || 'EUR'), currencyChosen: true, split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {}, payday: data.payday || { on: true, day: 25, scope: 'salary' }, lastBackup: data.lastBackup, customCats: data.customCats || [] };
     save(); render(); renderBackupBanner(); toast(`Backup restored · ${data.txns.length} entries`, '✓');
   }
   function renderBackupBanner() {
@@ -1573,7 +1617,7 @@
   });
   document.getElementById('clearAll').addEventListener('click', e => {
     if (!armed(e.currentTarget, 'Tap again to erase everything (can’t be undone)')) return;
-    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [], rules: state.rules || {}, payday: state.payday }; view = monthKey(new Date()); save(); render(); close(e.target); toast('Fresh start', '✓');
+    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [], rules: {}, payday: state.payday, customCats: [] }; view = monthKey(new Date()); save(); render(); close(e.target); toast('Fresh start', '✓');
   });
 
   // Month nav
@@ -1623,6 +1667,85 @@
       if (++f < 140) requestAnimationFrame(tick); else cv.remove();
     })();
   }
+
+  /* ================= Custom categories ================= */
+  const CAT_COLORS = ['#a78bfa', '#60a5fa', '#22d3ee', '#5eead4', '#4ade80', '#facc15', '#fb923c', '#fb7185', '#f472b6', '#94a3b8'];
+  const EMOJIS = ['🐾', '🏋️', '🎓', '👶', '💅', '🎮', '📚', '🚗', '⛽', '🍺', '☕', '💊', '📱', '💻', '🎵', '🎨', '✂️', '🌿', '🧸', '🍼', '🏠', '🎁', '💼', '🧾'];
+  function syncCustomCats() {
+    const mine = state.customCats || [];
+    ['income', 'expense'].forEach(type => {
+      CATS[type] = CATS[type].filter(c => !c.custom).concat(mine.filter(c => c.type === type).map(c => ({ ...c, custom: true })));
+    });
+  }
+  const firstGlyph = str => {
+    str = String(str || '').trim(); if (!str) return '';
+    try { if (window.Intl && Intl.Segmenter) return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(str)][0].segment; } catch (e) {}
+    return Array.from(str)[0];
+  };
+  let catEdit = null, catType = 'expense', catColor = CAT_COLORS[0], catBucket = 'wants', catFromTx = false;
+  function renderCatPickers() {
+    const em = firstGlyph(document.getElementById('cEmoji').value);
+    document.getElementById('cEmojis').innerHTML = EMOJIS.map(x => `<button type="button" data-em="${x}" class="${x === em ? 'on' : ''}" aria-label="Icon ${x}">${x}</button>`).join('');
+    document.getElementById('cColors').innerHTML = CAT_COLORS.map(c => `<button type="button" data-cc="${c}" aria-label="Color" style="width:34px;height:34px;padding:0;background:${c};${c === catColor ? 'box-shadow:0 0 0 2px var(--text), 0 0 14px ' + c : ''}"></button>`).join('');
+    document.getElementById('cBucketField').style.display = catType === 'expense' ? '' : 'none';
+    setSeg(document.getElementById('catTypeSeg'), catType, 'ct');
+    if (catType === 'expense') setSeg(document.getElementById('cBucketSeg'), catBucket, 'cb');
+  }
+  function openCat(c, fromTx) {
+    catEdit = c || null; catFromTx = !!fromTx;
+    catType = c ? c.type : (fromTx ? txType : 'expense');
+    catColor = c ? c.c : CAT_COLORS[(state.customCats.length * 3) % CAT_COLORS.length];
+    catBucket = c && c.b ? c.b : 'wants';
+    document.getElementById('catModalTitle').innerHTML = c ? 'Edit <em>category</em>' : 'New <em>category</em>';
+    document.getElementById('cName').value = c ? c.name : '';
+    document.getElementById('cEmoji').value = c ? c.e : '';
+    document.getElementById('catDelete').style.display = c ? '' : 'none';
+    document.getElementById('catTypeSeg').style.display = c ? 'none' : '';  // type is fixed once entries use it
+    open('catModal');
+    requestAnimationFrame(renderCatPickers);
+    setTimeout(() => document.getElementById('cName').focus(), 120);
+  }
+  document.getElementById('catTypeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; catType = b.dataset.ct; renderCatPickers(); });
+  document.getElementById('cBucketSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; catBucket = b.dataset.cb; renderCatPickers(); });
+  document.getElementById('cEmojis').addEventListener('click', e => { const b = e.target.closest('[data-em]'); if (!b) return; document.getElementById('cEmoji').value = b.dataset.em; renderCatPickers(); });
+  document.getElementById('cEmoji').addEventListener('input', renderCatPickers);
+  document.getElementById('cColors').addEventListener('click', e => { const b = e.target.closest('[data-cc]'); if (!b) return; catColor = b.dataset.cc; renderCatPickers(); });
+  document.getElementById('catForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('cName').value.trim();
+    if (!name) return toast('Give the category a name', '⚠️');
+    const data = { name, e: firstGlyph(document.getElementById('cEmoji').value) || '🏷️', c: catColor, type: catType, ...(catType === 'expense' ? { b: catBucket } : {}) };
+    let id;
+    if (catEdit) { const c = state.customCats.find(x => x.id === catEdit.id); Object.assign(c, data); if (c.type === 'income') delete c.b; id = c.id; }
+    else { id = 'c_' + uid(); state.customCats.push({ id, ...data }); }
+    syncCustomCats(); save();
+    close(e.target);
+    if (catFromTx && !catEdit) { txCat = id; renderCatGrid(); }
+    render(); renderCustomCatList();
+    toast(catEdit ? 'Category updated' : `“${name}” added`, data.e);
+  });
+  document.getElementById('catDelete').addEventListener('click', e => {
+    if (!catEdit || !armed(e.currentTarget, 'Tap again to delete')) return;
+    const id = catEdit.id, fallback = catEdit.type === 'income' ? 'other_in' : 'other_out';
+    let moved = 0;
+    state.txns.forEach(t => { if (t.category === id) { t.category = fallback; moved++; } });
+    Object.keys(state.rules || {}).forEach(k => { if (state.rules[k] === id) delete state.rules[k]; });
+    state.customCats = state.customCats.filter(c => c.id !== id);
+    if (txCat === id) txCat = null;
+    syncCustomCats(); save(); close(e.target); render(); renderCustomCatList();
+    toast(moved ? `Deleted · ${moved} entr${moved === 1 ? 'y' : 'ies'} moved to Other` : 'Category deleted', '🗑️');
+  });
+  function renderCustomCatList() {
+    const el = document.getElementById('customCatList');
+    const list = state.customCats || [];
+    const bucketName = id => (BUCKETS.find(b => b.id === id) || {}).name || '';
+    el.innerHTML = list.length ? list.map(c => {
+      const n = state.txns.filter(t => t.category === c.id).length;
+      return `<div class="ccat" style="--c:${c.c}"><span class="e">${c.e}</span><div class="n">${esc(c.name)}<small>${c.type === 'income' ? 'Income' : 'Expense · ' + bucketName(c.b)} · ${n} entr${n === 1 ? 'y' : 'ies'}</small></div><button type="button" data-editcat="${c.id}">Edit</button></div>`;
+    }).join('') : `<div class="ccat-empty">No custom categories yet. Add one here or with “＋ New” when you log an entry.</div>`;
+  }
+  document.getElementById('customCatList').addEventListener('click', e => { const b = e.target.closest('[data-editcat]'); if (b) openCat(state.customCats.find(c => c.id === b.dataset.editcat)); });
+  document.getElementById('addCatBtn').addEventListener('click', () => openCat(null, false));
 
   /* ================= Bottom sheets: grab handle + swipe down to close ================= */
   document.querySelectorAll('.scrim:not(.sheet) .modal').forEach(m => {
@@ -1968,6 +2091,7 @@
   try {
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && window.self === window.top) navigator.serviceWorker.register('sw.js').catch(() => {});
   } catch (e) {}
+  state.customCats = state.customCats || [];
   if (state.currency === 'USD' && !state.currencyChosen) { state.currency = 'EUR'; state.currencyChosen = true; save(); }
   if (!state.payday) { state.payday = { on: true, day: 25, scope: 'salary' }; save(); }
   syncTheme();
