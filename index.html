@@ -465,7 +465,7 @@
       <div class="hero-orb"></div>
       <span class="eyebrow"><b id="dayBadge">Day 1</b><span id="daysLeft">of the month</span></span>
       <h1 class="serif" id="headline">Your money, <em>in focus.</em></h1>
-      <p class="sub" id="subline">Every dollar gets a job. Track what comes in, decide where it goes.</p>
+      <p class="sub" id="subline">Every euro gets a job. Track what comes in, decide where it goes.</p>
       <div class="balance">
         <div>
           <div class="label">Left to spend this month</div>
@@ -501,7 +501,7 @@
     <!-- Income plan -->
     <section class="glass card span-8 reveal" id="planCard" style="animation-delay:.18s">
       <div class="card-head">
-        <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span>Income plan · give every dollar a job</div>
+        <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span>Income plan · give every euro a job</div>
         <div style="display:flex;gap:8px;align-items:center">
           <span class="plan-total" id="planTotal"></span>
           <button class="btn btn-ghost" id="editPlan" style="height:32px;font-size:12px;padding:0 14px">Edit split</button>
@@ -569,7 +569,7 @@
   <form class="modal glass" id="txForm" autocomplete="off">
     <h3 id="txModalTitle">New <em>entry</em></h3>
     <div class="seg" id="typeSeg"><span class="pill"></span><button type="button" data-t="expense" class="on">Expense</button><button type="button" data-t="income">Income</button></div>
-    <div class="amount-in"><span class="cur" id="curSym">$</span><input id="fAmount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required /></div>
+    <div class="amount-in"><span class="cur" id="curSym">€</span><input id="fAmount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required /></div>
     <div class="field"><label>Category</label><div class="cat-grid" id="catGrid"></div></div>
     <div class="field"><label for="fNote">Description</label><input class="input" id="fNote" placeholder="e.g. Monthly rent, Client invoice…" /></div>
     <div class="row2">
@@ -606,7 +606,7 @@
 <div class="scrim" id="fundModal">
   <form class="modal glass" id="fundForm" autocomplete="off">
     <h3>Add to <em id="fundName">goal</em></h3>
-    <div class="amount-in"><span class="cur cur-sym">$</span><input id="fundAmount" type="number" step="0.01" min="0.01" placeholder="0.00" required /></div>
+    <div class="amount-in"><span class="cur cur-sym">€</span><input id="fundAmount" type="number" step="0.01" min="0.01" placeholder="0.00" required /></div>
     <p style="font-size:13px;color:var(--muted)">This also logs a <b style="color:var(--text);font-weight:500">Savings</b> entry for the month, so it counts toward your Future bucket.</p>
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost" data-close>Cancel</button>
@@ -657,7 +657,7 @@
     <h3>Settings</h3>
     <div class="field"><label for="sCurrency">Currency</label>
       <select class="input" id="sCurrency">
-        <option value="USD">USD — US Dollar</option><option value="EUR">EUR — Euro</option><option value="GBP">GBP — British Pound</option>
+        <option value="EUR">EUR — Euro</option><option value="USD">USD — US Dollar</option><option value="GBP">GBP — British Pound</option>
         <option value="BRL">BRL — Brazilian Real</option><option value="CAD">CAD — Canadian Dollar</option><option value="AUD">AUD — Australian Dollar</option>
         <option value="JPY">JPY — Japanese Yen</option><option value="CHF">CHF — Swiss Franc</option><option value="MXN">MXN — Mexican Peso</option><option value="INR">INR — Indian Rupee</option>
       </select>
@@ -795,7 +795,8 @@
       if (rnd() > .5) add('expense', 'health', r(25, 90), 10, 'Pharmacy');
     }
     return {
-      currency: 'USD',
+      currency: 'EUR',
+      currencyChosen: true,
       payday: { on: true, day: 25, scope: 'salary' },
       lastBackup: new Date().toISOString(),
       split: [50, 30, 20],
@@ -817,7 +818,7 @@
     } catch (e) { return cur + ' ' + n.toFixed(2); }
   };
   const curSymbol = () => {
-    try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: state.currency }).formatToParts(0).find(p => p.type === 'currency').value; } catch (e) { return '$'; }
+    try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: state.currency }).formatToParts(0).find(p => p.type === 'currency').value; } catch (e) { return '€'; }
   };
   const monthName = (key, style = 'long') => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: style, ...(style === 'long' ? { year: 'numeric' } : {}) }); };
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -896,10 +897,10 @@
     else if (left < 0) headline.innerHTML = `${greet}. <em>Time to rebalance.</em>`;
     else if (rate >= .3) headline.innerHTML = `${greet}. <em>You're thriving.</em>`;
     else if (rate >= .15) headline.innerHTML = `${greet}. <em>Nicely balanced.</em>`;
-    else headline.innerHTML = `${greet}. <em>Every dollar counts.</em>`;
+    else headline.innerHTML = `${greet}. <em>Every euro counts.</em>`;
     document.getElementById('subline').textContent = s.income
       ? `You've brought in ${fmt(s.income)} and given ${Math.round(Math.min(1, s.expense / s.income) * 100)}% of it a job. ${left >= 0 ? 'The rest is breathing room.' : 'Spending has outpaced income — let’s look at where.'}`
-      : 'Add your first income to start planning. Every dollar gets a job.';
+      : 'Add your first income to start planning. Every euro gets a job.';
 
     animateNum(document.getElementById('balanceBig'), left, bigMoney);
     animateNum(document.getElementById('statIncome'), s.income, n => esc(fmt(n)));
@@ -1302,7 +1303,7 @@
     const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     note.textContent = `${state.txns.length} entries stored on this device${installed ? ' (installed app)' : ''}. ${persisted ? 'Storage is marked permanent. ' : ''}Last backup: ${last}.`;
   });
-  document.getElementById('sCurrency').addEventListener('change', e => { state.currency = e.target.value; save(); render(); });
+  document.getElementById('sCurrency').addEventListener('change', e => { state.currency = e.target.value; state.currencyChosen = true; save(); render(); });
   const download = (name, content, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
   function markBackedUp() { state.lastBackup = new Date().toISOString(); delete state.backupSnooze; save(); renderBackupBanner(); }
   async function saveBackup() {
@@ -1330,7 +1331,7 @@
   });
   function restoreBackup(data) {
     if (!data || !Array.isArray(data.txns)) throw new Error('bad backup');
-    state = { currency: data.currency || 'USD', split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {}, payday: data.payday || { on: true, day: 25, scope: 'salary' }, lastBackup: data.lastBackup };
+    state = { currency: (data.currency === 'USD' && !data.currencyChosen) ? 'EUR' : (data.currency || 'EUR'), currencyChosen: true, split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {}, payday: data.payday || { on: true, day: 25, scope: 'salary' }, lastBackup: data.lastBackup };
     save(); render(); renderBackupBanner(); toast(`Backup restored · ${data.txns.length} entries`, '✓');
   }
   function renderBackupBanner() {
@@ -1665,6 +1666,7 @@
   try {
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && window.self === window.top) navigator.serviceWorker.register('sw.js').catch(() => {});
   } catch (e) {}
+  if (state.currency === 'USD' && !state.currencyChosen) { state.currency = 'EUR'; state.currencyChosen = true; save(); }
   if (!state.payday) { state.payday = { on: true, day: 25, scope: 'salary' }; save(); }
   render();
   renderBackupBanner();
