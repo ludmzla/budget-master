@@ -609,8 +609,8 @@
       <label class="dropzone" id="dropzone">
         <span class="big">🏦</span>
         <span>Drop your <b>.csv</b> here or click to choose</span>
-        <small>Semicolon or comma separated · German or English number formats</small>
-        <input type="file" id="csvFile" accept=".csv,text/csv,text/plain" hidden />
+        <small>On iPhone the file may just be called “Daten”. That’s fine, pick it.</small>
+        <input type="file" id="csvFile" hidden />
       </label>
     </div>
     <div id="impStep2" hidden>
@@ -1358,14 +1358,17 @@
     const buf = await file.arrayBuffer();
     let text;
     try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { text = new TextDecoder('windows-1252').decode(buf); }
-    text = text.replace(/^﻿/, '');
+    text = text.replace(/^\uFEFF/, '');
+    if (/^%PDF/.test(text)) return toast('That’s a PDF. Please export the transactions as CSV instead', '⚠️');
+    if (/^PK\u0003\u0004/.test(text)) return toast('That’s an Excel/ZIP file. Please choose the CSV export', '⚠️');
+    if (!text.trim()) return toast('That file is empty. Try exporting again with a wider date range', '⚠️');
     const firstLines = text.split(/\r?\n/).slice(0, 30).join('\n');
     const delim = [';', ',', '\t'].map(d => [d, (firstLines.match(new RegExp(d === '\t' ? '\t' : '\\' + d, 'g')) || []).length]).sort((a, b) => b[1] - a[1])[0][0];
     const rows = parseCSV(text, delim);
     // header row = first row that names a date column and has several cells
     let hi = rows.findIndex(r => r.length >= 3 && r.some(c => /buchungstag|buchungsdatum|^datum$|^date$|booking date|transaction date/i.test(c)));
     if (hi < 0) hi = rows.findIndex(r => r.length >= 3);
-    if (hi < 0) return toast('That file has no rows I can read', '⚠️');
+    if (hi < 0) return toast('That file has no rows I can read. Is it the CSV export?', '⚠️');
     const headers = rows[hi].map((h, i) => h || `Column ${i + 1}`);
     const data = rows.slice(hi + 1).filter(r => r.length >= Math.min(3, headers.length));
     const map = {}; Object.keys(FIELD_RE).forEach(f => map[f] = findCol(headers, f));
@@ -1434,6 +1437,7 @@
     const f2 = n => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(n); } catch (e) { return n.toFixed(2); } };
     document.getElementById('impSummary').innerHTML = needMap
       ? `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip" style="color:var(--warn)">Pick the date and amount columns to continue</span>`
+      : !rows.length ? `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip" style="color:var(--warn)">The file has headings but no transactions. Export again with a wider date range</span>`
       : `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip"><b>${fresh.length}</b> new</span>${dups ? `<span class="chip"><b>${dups}</b> already imported</span>` : ''}${span ? `<span class="chip">${span}</span>` : ''}<span class="chip" style="color:var(--income)">+${f2(inc)}</span><span class="chip" style="color:var(--expense)">−${f2(out)}</span>`;
     document.getElementById('impList').innerHTML = rows.length ? rows.map((r, i) => `
       <div class="imp-row ${r.dup ? 'dup' : ''}">
