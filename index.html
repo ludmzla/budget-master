@@ -920,10 +920,10 @@
       </div>
     </div>
     <div class="field">
-      <label>Overdraft (Dispo)</label>
+      <label>Carry over</label>
       <div class="payday-box">
-        <label class="check" style="margin:0"><input type="checkbox" id="odCarry" /> <span>If the month starts in the minus, subtract it from <b>Left to spend</b></span></label>
-        <p class="pd-example">Uses the account balance from your Volksbank import. Example: salary arrives while you're at −400 €, so 400 € of it just covers the overdraft.</p>
+        <label class="check" style="margin:0"><input type="checkbox" id="odCarry" /> <span>Include what was on the account before the month started (plus <b>or</b> minus) in <b>Left to spend</b></span></label>
+        <p class="pd-example">Uses the account balance from your Volksbank import, so Left to spend matches your bank. Example: at +120 € before payday, those 120 € are added; at −400 €, 400 € of the salary just covers the overdraft.</p>
       </div>
     </div>
     <div class="field"><label>Your categories</label>
@@ -1006,7 +1006,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.15';
+  const APP_VERSION = '1.16';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
@@ -1182,7 +1182,7 @@
     const byBucket = { needs: 0, wants: 0, future: 0 };
     exp.forEach(t => { const c = CATS.expense.find(c => c.id === t.category); byBucket[c ? c.b : 'wants'] += t.amount; });
     const opening = openingBalance(key);
-    const carry = state.overdraftCarry !== false && opening != null && opening < 0 ? opening : 0;
+    const carry = state.overdraftCarry !== false && opening != null ? opening : 0;  // plus or minus from before the month started
     return { list, income, expense, byBucket, saved: byBucket.future, consumption: byBucket.needs + byBucket.wants, opening, carry, left: income - expense + carry };
   }
 
@@ -1231,6 +1231,7 @@
     const bb = state.bankBalance;
     if (bb) pills.push(`<span class="bank-pill ${bb.amount < 0 ? 'neg' : ''}">🏦 Bank balance <b>${fmt(bb.amount)}</b> · ${new Date(bb.date + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>`);
     if (s.carry < 0) pills.push(`<span class="bank-pill neg">Includes <b>${fmt(s.carry)}</b> overdraft carried in</span>`);
+    else if (s.carry > 0) pills.push(`<span class="bank-pill">Includes <b>+${fmt(s.carry)}</b> carried over from before payday</span>`);
     bankRow.innerHTML = pills.join(''); bankRow.hidden = !pills.length;
     animateNum(document.getElementById('statIncome'), s.income, n => esc(fmt(n)));
     animateNum(document.getElementById('statExpense'), s.consumption, n => esc(fmt(n)));
