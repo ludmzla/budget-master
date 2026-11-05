@@ -524,6 +524,8 @@
     right: max(3px, env(safe-area-inset-right, 0px)); background: rgba(var(--ink), .4); opacity: 0; transition: opacity .35s;
   }
   .scroll-ind.on { opacity: 1; transition: opacity .1s; }
+  .sheet-done { display: none; }
+  .sheet-head h3 { margin-bottom: 18px; }
   @media (max-width: 720px) {
     .tabbar {
       display: flex; gap: 10px; align-items: center; position: fixed; z-index: 30;
@@ -561,7 +563,29 @@
     .wrap { position: fixed; inset: 0; max-width: none; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .wrap::-webkit-scrollbar { display: none; }
     .scroll-ind { display: block; }
-    nav.top { top: calc(8px + env(safe-area-inset-top, 0px)); padding-left: 14px; }
+    /* Sticky offsets inside a scroll container are measured from its padding edge, which already
+       includes the status-bar inset, so don't add it a second time */
+    nav.top { top: -4px; }
+    .toast { bottom: calc(96px + max(10px, calc(env(safe-area-inset-bottom, 0px) - 14px))); }
+    /* Settings opens as a full-screen page on phones */
+    .scrim.sheet { padding: 0; place-items: stretch; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    .scrim.sheet .modal {
+      width: 100%; height: 100%; max-height: none; border-radius: 0; border: 0; box-shadow: none;
+      background: var(--bg); padding: 0 max(20px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+      transform: translateY(6%); overscroll-behavior: contain;
+    }
+    .scrim.sheet .modal::before, .scrim.sheet .modal::after { display: none; }
+    .scrim.sheet.open .modal { transform: none; }
+    .sheet-head {
+      position: sticky; top: 0; z-index: 5; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+      margin: 0 calc(-1 * max(20px, env(safe-area-inset-right, 0px))) 10px; padding: calc(14px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 12px;
+      background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border-bottom: 1px solid var(--stroke);
+    }
+    .sheet-head h3 { margin: 0; font-size: 38px; line-height: 1; }
+    .sheet-done { display: block; font-size: 16px; font-weight: 600; color: var(--accent-2); padding: 6px 2px; -webkit-tap-highlight-color: transparent; }
+    .sheet-foot { display: none; }
+    nav.top { padding-left: 14px; }
     .month-switch span { min-width: 92px; font-size: 13px; }
     .nav-add, .logo-text { display: none; }
     .search input { width: 100px; }
@@ -793,9 +817,9 @@
 <div class="drop-overlay" id="dropOverlay">Drop your bank CSV to import</div>
 
 <!-- Settings modal -->
-<div class="scrim" id="settingsModal">
+<div class="scrim sheet" id="settingsModal">
   <div class="modal glass">
-    <h3>Settings</h3>
+    <div class="sheet-head"><h3>Settings</h3><button type="button" class="sheet-done" data-close>Done</button></div>
     <div class="field"><label>Appearance</label>
       <div class="seg" id="themeSeg" style="width:100%;margin:0"><span class="pill"></span><button type="button" data-th="system">System</button><button type="button" data-th="light">Light</button><button type="button" data-th="dark">Dark</button></div>
     </div>
@@ -829,7 +853,7 @@
     </div>
     <input type="file" id="importFile" hidden />
     <p class="store-note" id="storeNote"></p>
-    <div class="modal-actions"><button class="btn btn-primary" data-close>Done</button></div>
+    <div class="modal-actions sheet-foot"><button class="btn btn-primary" data-close>Done</button></div>
   </div>
 </div>
 
@@ -892,7 +916,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.7';
+  const APP_VERSION = '1.8';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
