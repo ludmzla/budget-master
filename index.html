@@ -892,6 +892,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
+  const APP_VERSION = '1.7';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
@@ -1446,7 +1447,7 @@
     const last = state.lastBackup ? new Date(state.lastBackup).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : 'never';
     let persisted = false; try { persisted = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : false; } catch (e) {}
     const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-    note.textContent = `${state.txns.length} entries stored on this device${installed ? ' (installed app)' : ''}. ${persisted ? 'Storage is marked permanent. ' : ''}Last backup: ${last}.`;
+    note.textContent = `${state.txns.length} entries stored on this device${installed ? ' (installed app)' : ''}. ${persisted ? 'Storage is marked permanent. ' : ''}Last backup: ${last}. Lumen version ${APP_VERSION}.`;
   });
   document.getElementById('sCurrency').addEventListener('change', e => { state.currency = e.target.value; state.currencyChosen = true; save(); render(); });
   const download = (name, content, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
@@ -1601,6 +1602,8 @@
   function goTab(t, opts = {}) {
     if (!TABS.includes(t)) t = 'home';
     const changed = mainEl.dataset.view !== t;
+    // Tapping the tab you're already on scrolls back to the top, like iOS
+    if (!changed && !opts.quiet) { scrollEl.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     mainEl.dataset.view = t;
     document.querySelectorAll('.tab').forEach(b => { const on = b.dataset.go === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
     placeTabPill();
