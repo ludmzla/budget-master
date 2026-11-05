@@ -464,6 +464,12 @@
   .ccat .n small { display: block; color: var(--faint); font-size: 12px; margin-top: 1px; }
   .ccat button { font-size: 13px; color: var(--accent-2); padding: 6px 8px; }
   #catModal { z-index: 56; }  /* opens on top of the entry sheet and Settings */
+  .bank-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .bank-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 12px; border-radius: 999px; background: rgba(var(--ink), .05); border: 1px solid var(--stroke); color: var(--muted); }
+  .bank-pill b { color: var(--text); font-weight: 600; }
+  .bank-pill.neg { background: color-mix(in srgb, var(--expense) 12%, transparent); border-color: color-mix(in srgb, var(--expense) 35%, transparent); }
+  .bank-pill.neg b { color: var(--expense); }
+  .od-tag { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 6px; margin-left: 6px; color: var(--expense); background: color-mix(in srgb, var(--expense) 12%, transparent); }
   .ccat-empty { font-size: 13px; color: var(--faint); padding: 2px 0 6px; }
   .row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
   .row2 > * { min-width: 0; }
@@ -678,6 +684,7 @@
         </div>
         <span class="delta up" id="balanceDelta">—</span>
       </div>
+      <div class="bank-row" id="bankRow" hidden></div>
       <div class="stats">
         <div class="stat"><div class="k"><i style="background:var(--income);box-shadow:0 0 8px var(--income)"></i>Income</div><div class="v" id="statIncome">$0</div></div>
         <div class="stat"><div class="k"><i style="background:var(--expense);box-shadow:0 0 8px var(--expense)"></i>Spent</div><div class="v" id="statExpense">$0</div></div>
@@ -912,6 +919,13 @@
         <p class="pd-example" id="pdExample"></p>
       </div>
     </div>
+    <div class="field">
+      <label>Overdraft (Dispo)</label>
+      <div class="payday-box">
+        <label class="check" style="margin:0"><input type="checkbox" id="odCarry" /> <span>If the month starts in the minus, subtract it from <b>Left to spend</b></span></label>
+        <p class="pd-example">Uses the account balance from your Volksbank import. Example: salary arrives while you're at −400 €, so 400 € of it just covers the overdraft.</p>
+      </div>
+    </div>
     <div class="field"><label>Your categories</label>
       <div class="ccat-list" id="customCatList"></div>
       <button type="button" class="btn btn-ghost" id="addCatBtn" style="width:100%;justify-content:center;height:44px;border-radius:14px">＋ New category</button>
@@ -992,7 +1006,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.13';
+  const APP_VERSION = '1.14';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
@@ -1103,6 +1117,33 @@
     return autoShift(t) ? shiftMonth(own, 1) : own;
   }
   const inMonth = key => state.txns.filter(t => budgetMonthOf(t) === key);
+  // Order transactions as they happened (date, then position in the bank file)
+  const chron = (a, b) => a.date.localeCompare(b.date) || ((a.ord ?? 0) - (b.ord ?? 0));
+  const signed = t => t.type === 'income' ? t.amount : -t.amount;
+  // Bank balance just before the first transaction that belongs to this budget month
+  function openingBalance(key) {
+    const list = inMonth(key).filter(t => t.bal != null).sort(chron);
+    if (!list.length) return null;
+    return Math.round((list[0].bal - signed(list[0])) * 100) / 100;
+  }
+  // Days in the overdraft during a calendar month, from the imported balances
+  function overdraftStats(key) {
+    const all = state.txns.filter(t => t.bal != null).sort(chron);
+    if (!all.length) return null;
+    const [y, m] = key.split('-').map(Number);
+    const today = new Date(), last = new Date(y, m, 0).getDate();
+    const upto = key === monthKey(today) ? today.getDate() : last;
+    if (key > monthKey(today)) return null;
+    let i = 0, bal = null, days = 0, low = 0, known = 0;
+    for (let d = 1; d <= upto; d++) {
+      const iso = `${key}-${String(d).padStart(2, '0')}`;
+      while (i < all.length && all[i].date <= iso) { bal = all[i].bal; i++; }
+      if (bal === null) { const first = all[0]; if (first.date.slice(0, 7) === key) bal = first.bal - signed(first); else continue; }
+      known++;
+      if (bal < 0) { days++; low = Math.min(low, bal); }
+    }
+    return known ? { days, low } : null;
+  }
   function summary(key) {
     const list = inMonth(key);
     const income = list.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
@@ -1110,7 +1151,9 @@
     const expense = exp.reduce((a, t) => a + t.amount, 0);
     const byBucket = { needs: 0, wants: 0, future: 0 };
     exp.forEach(t => { const c = CATS.expense.find(c => c.id === t.category); byBucket[c ? c.b : 'wants'] += t.amount; });
-    return { list, income, expense, byBucket, saved: byBucket.future, consumption: byBucket.needs + byBucket.wants };
+    const opening = openingBalance(key);
+    const carry = state.overdraftCarry !== false && opening != null && opening < 0 ? opening : 0;
+    return { list, income, expense, byBucket, saved: byBucket.future, consumption: byBucket.needs + byBucket.wants, opening, carry, left: income - expense + carry };
   }
 
   /* ================= Render ================= */
@@ -1127,7 +1170,7 @@
     document.querySelectorAll('#curSym, .cur-sym').forEach(el => el.textContent = curSymbol());
 
     // Hero copy
-    const left = s.income - s.expense;
+    const left = s.left;
     const hour = today.getHours();
     const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
     if (isCurrent) {
@@ -1149,11 +1192,17 @@
       : 'Add your first income to start planning. Every euro gets a job.';
 
     animateNum(document.getElementById('balanceBig'), left, bigMoney);
+    const bankRow = document.getElementById('bankRow');
+    const pills = [];
+    const bb = state.bankBalance;
+    if (bb) pills.push(`<span class="bank-pill ${bb.amount < 0 ? 'neg' : ''}">🏦 Bank balance <b>${fmt(bb.amount)}</b> · ${new Date(bb.date + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>`);
+    if (s.carry < 0) pills.push(`<span class="bank-pill neg">Includes <b>${fmt(s.carry)}</b> overdraft carried in</span>`);
+    bankRow.innerHTML = pills.join(''); bankRow.hidden = !pills.length;
     animateNum(document.getElementById('statIncome'), s.income, n => esc(fmt(n)));
     animateNum(document.getElementById('statExpense'), s.consumption, n => esc(fmt(n)));
     animateNum(document.getElementById('statSaved'), s.saved, n => esc(fmt(n)));
     const delta = document.getElementById('balanceDelta');
-    const prevLeft = prev.income - prev.expense;
+    const prevLeft = prev.left;
     if (prev.income || prev.expense) {
       const diff = left - prevLeft;
       delta.className = 'delta ' + (diff >= 0 ? 'up' : 'down');
@@ -1179,6 +1228,8 @@
 
   function renderInsights(s, prev, isCurrent, dim, today) {
     const out = [];
+    const od = overdraftStats(view);
+    if (od && od.days) out.push({ ic: '🚨', bg: 'rgba(251,113,133,.15)', t: `In the overdraft for <b>${od.days} day${od.days === 1 ? '' : 's'}</b> this month (lowest ${fmt(od.low)}). Dispo interest is expensive.` });
     const split = state.split;
     BUCKETS.forEach((b, i) => {
       if (b.id === 'future' || !s.income) return;
@@ -1194,8 +1245,8 @@
     let best = null;
     Object.keys(byCat).forEach(k => { if (prevByCat[k] && k !== 'housing') { const d = byCat[k] - prevByCat[k]; if (!best || Math.abs(d) > Math.abs(best.d)) best = { k, d }; } });
     if (best && Math.abs(best.d) > 15) out.push({ ic: best.d > 0 ? '📈' : '📉', bg: best.d > 0 ? 'rgba(251,113,133,.15)' : 'rgba(94,234,212,.15)', t: `${catById(best.k).name} is <b>${best.d > 0 ? 'up' : 'down'} ${fmt(Math.abs(best.d))}</b> from last month.` });
-    if (isCurrent && s.income > s.expense) {
-      const perDay = (s.income - s.expense) / Math.max(1, dim - today.getDate() + 1);
+    if (isCurrent && s.left > 0) {
+      const perDay = s.left / Math.max(1, dim - today.getDate() + 1);
       out.push({ ic: '☀️', bg: 'rgba(167,139,250,.18)', t: `You can spend about <b>${fmt(perDay)}/day</b> for the rest of the month.` });
     }
     if (!out.length) out.push({ ic: '✨', bg: 'rgba(167,139,250,.18)', t: s.income ? 'Everything is on track. Nice work.' : 'Log your income to unlock insights.' });
@@ -1314,7 +1365,7 @@
           const c = catById(t.category);
           return `<div class="tx" data-id="${t.id}" style="--c:${c.c};animation-delay:${Math.min(i++, 14) * 25}ms">
             <div class="e">${c.e}</div>
-            <div class="info"><div class="t">${esc(t.note || c.name)}</div><div class="s">${c.name}${t.type === 'expense' ? ' · ' + (BUCKETS.find(b => b.id === c.b)?.name || '') : ''}${budgetMonthOf(t) !== t.date.slice(0, 7) ? `<span class="shift-tag">paid ${new Date(t.date + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} · for ${monthName(budgetMonthOf(t), 'long').split(' ')[0]}</span>` : ''}</div></div>
+            <div class="info"><div class="t">${esc(t.note || c.name)}</div><div class="s">${c.name}${t.type === 'expense' ? ' · ' + (BUCKETS.find(b => b.id === c.b)?.name || '') : ''}${t.type === 'income' && t.bal != null && t.bal - t.amount < 0 ? `<span class="od-tag">account was at ${fmt(t.bal - t.amount)} before</span>` : ''}${budgetMonthOf(t) !== t.date.slice(0, 7) ? `<span class="shift-tag">paid ${new Date(t.date + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} · for ${monthName(budgetMonthOf(t), 'long').split(' ')[0]}</span>` : ''}</div></div>
             <div class="a ${t.type === 'income' ? 'inc' : ''}">${t.type === 'income' ? '+' : '−'}${fmt(t.amount)}</div>
             <button class="icon-btn del" data-del="${t.id}" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
           </div>`;
@@ -1543,7 +1594,7 @@
     save(); renderPayday(); render();
   }));
   document.getElementById('openSettings').addEventListener('click', async () => {
-    document.getElementById('sCurrency').value = state.currency; renderPayday(); renderCustomCatList(); open('settingsModal');
+    document.getElementById('sCurrency').value = state.currency; renderPayday(); renderCustomCatList(); document.getElementById('odCarry').checked = state.overdraftCarry !== false; open('settingsModal');
     requestAnimationFrame(() => setSeg(document.getElementById('themeSeg'), getMode(), 'th'));
     const note = document.getElementById('storeNote');
     const last = state.lastBackup ? new Date(state.lastBackup).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : 'never';
@@ -1551,6 +1602,7 @@
     const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     note.textContent = `${state.txns.length} entries stored on this device${installed ? ' (installed app)' : ''}. ${persisted ? 'Storage is marked permanent. ' : ''}Last backup: ${last}. Lumen version ${APP_VERSION}.`;
   });
+  document.getElementById('odCarry').addEventListener('change', e => { state.overdraftCarry = e.target.checked; save(); render(); });
   document.getElementById('sCurrency').addEventListener('change', e => { state.currency = e.target.value; state.currencyChosen = true; save(); render(); });
   const download = (name, content, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
   function markBackedUp() { state.lastBackup = new Date().toISOString(); delete state.backupSnooze; save(); renderBackupBanner(); }
@@ -1579,7 +1631,7 @@
   });
   function restoreBackup(data) {
     if (!data || !Array.isArray(data.txns)) throw new Error('bad backup');
-    state = { currency: (data.currency === 'USD' && !data.currencyChosen) ? 'EUR' : (data.currency || 'EUR'), currencyChosen: true, split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {}, payday: data.payday || { on: true, day: 25, scope: 'salary' }, lastBackup: data.lastBackup, customCats: data.customCats || [] };
+    state = { currency: (data.currency === 'USD' && !data.currencyChosen) ? 'EUR' : (data.currency || 'EUR'), currencyChosen: true, split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {}, payday: data.payday || { on: true, day: 25, scope: 'salary' }, lastBackup: data.lastBackup, customCats: data.customCats || [], bankBalance: data.bankBalance || null, overdraftCarry: data.overdraftCarry };
     save(); render(); renderBackupBanner(); toast(`Backup restored · ${data.txns.length} entries`, '✓');
   }
   function renderBackupBanner() {
@@ -1624,9 +1676,10 @@
     if (!armed(e.currentTarget, 'Tap again to clear all entries and goals')) return;
     const prev = { txns: state.txns, goals: state.goals };
     const n = prev.txns.length;
-    state.txns = []; state.goals = [];
+    const prevBank = state.bankBalance;
+    state.txns = []; state.goals = []; state.bankBalance = null;
     save(); render(); renderBackupBanner(); renderCustomCatList();
-    toast(`Cleared ${n} entr${n === 1 ? 'y' : 'ies'}`, '🧹', () => { state.txns = prev.txns; state.goals = prev.goals; save(); render(); renderCustomCatList(); });
+    toast(`Cleared ${n} entr${n === 1 ? 'y' : 'ies'}`, '🧹', () => { state.txns = prev.txns; state.goals = prev.goals; state.bankBalance = prevBank; save(); render(); renderCustomCatList(); });
   });
   document.getElementById('clearAll').addEventListener('click', e => {
     if (!armed(e.currentTarget, 'Tap again to erase everything (can’t be undone)')) return;
@@ -1937,6 +1990,7 @@
     purpose: [/verwendungszweck|vorgang\/verwendungszweck|description|beschreibung|memo|reference/i],
     btext: [/^buchungstext$|^vorgang$|umsatzart|transaction type/i],
     currency: [/w(ä|ae)hrung|currency/i],
+    balance: [/saldo nach buchung|kontostand|balance after|running balance|^saldo$|^balance$/i],
   };
   function findCol(headers, field) {
     for (const re of FIELD_RE[field]) { const i = headers.findIndex(h => re.test(h)); if (i >= 0) return i; }
@@ -1979,10 +2033,12 @@
     const { data, map } = imp;
     const existing = new Set(state.txns.map(t => t.importKey).filter(Boolean));
     const seen = {};
-    let skipped = 0, curCount = {};
+    let skipped = 0, curCount = {}, endBal = null, idx = 0;
     imp.rows = [];
     if (map.date < 0 || map.amount < 0) { renderImport(); return; }
     data.forEach(r => {
+      // classic export: closing balance row ("Endsaldo")
+      if (/endsaldo/i.test(r.join(' '))) { let v = parseAmount(r[map.amount]); if (!isNaN(v)) { if (map.sh >= 0 && r[map.sh] === 'S') v = -Math.abs(v); endBal = v; } }
       const date = parseDate(r[map.date]);
       let amt = parseAmount(r[map.amount]);
       if (!date || isNaN(amt) || amt === 0) { skipped++; return; }
@@ -1998,9 +2054,24 @@
       const key = `${base}#${seen[base]}`;
       const dup = existing.has(key);
       const note = (payee || purpose || btext || 'Bank transaction').slice(0, 70);
-      imp.rows.push({ date, amount: Math.round(Math.abs(amt) * 100) / 100, type, payee, purpose, btext, note, key, dup, include: !dup, category: autoCat(type, payee, purpose, btext), userCat: false });
+      const balRaw = map.balance >= 0 ? parseAmount(r[map.balance]) : NaN;
+      imp.rows.push({ date, amount: Math.round(Math.abs(amt) * 100) / 100, type, payee, purpose, btext, note, key, dup, include: !dup, category: autoCat(type, payee, purpose, btext), userCat: false, bal: isNaN(balRaw) ? null : balRaw, fileIdx: idx++ });
     });
-    imp.rows.sort((a, b) => b.date.localeCompare(a.date));
+    // Bank files list newest first or oldest first; number rows in the order they happened
+    if (imp.rows.length) {
+      const first = imp.rows[0], lastRow = imp.rows[imp.rows.length - 1];
+      let newestFirst = first.date > lastRow.date;
+      if (first.date === lastRow.date && imp.rows.length > 1) {
+        // same dates: use the balances. Newest-first means row 0's balance minus its amount equals row 1's balance
+        const [r0, r1] = imp.rows, sg = r => r.type === 'income' ? r.amount : -r.amount;
+        if (r0.bal != null && r1.bal != null) newestFirst = Math.abs((r0.bal - sg(r0)) - r1.bal) < 0.01;
+      }
+      imp.rows.forEach(r => r.ord = newestFirst ? imp.rows.length - 1 - r.fileIdx : r.fileIdx);
+      const withBal = imp.rows.filter(r => r.bal != null).sort((a, b) => b.ord - a.ord)[0];
+      const maxDate = imp.rows.reduce((m, r) => r.date > m ? r.date : m, '');
+      imp.balance = withBal ? { amount: withBal.bal, date: withBal.date } : (endBal != null ? { amount: endBal, date: maxDate } : null);
+    } else imp.balance = endBal != null ? { amount: endBal, date: isoDate(new Date()) } : null;
+    imp.rows.sort((a, b) => b.date.localeCompare(a.date) || b.ord - a.ord);
     imp.skipped = skipped;
     imp.currency = Object.entries(curCount).sort((a, b) => b[1] - a[1])[0]?.[0] || (/volksbank/i.test(imp.format) ? 'EUR' : null);
     renderImport();
@@ -2027,7 +2098,7 @@
     document.getElementById('impSummary').innerHTML = needMap
       ? `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip" style="color:var(--warn)">Pick the date and amount columns to continue</span>`
       : !rows.length ? `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip" style="color:var(--warn)">The file has headings but no transactions. Export again with a wider date range</span>`
-      : `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip"><b>${fresh.length}</b> new</span>${dups ? `<span class="chip"><b>${dups}</b> already imported</span>` : ''}${span ? `<span class="chip">${span}</span>` : ''}<span class="chip" style="color:var(--income)">+${f2(inc)}</span><span class="chip" style="color:var(--expense)">−${f2(out)}</span>`;
+      : `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip"><b>${fresh.length}</b> new</span>${dups ? `<span class="chip"><b>${dups}</b> already imported</span>` : ''}${span ? `<span class="chip">${span}</span>` : ''}${imp.balance ? `<span class="chip" style="${imp.balance.amount < 0 ? 'color:var(--expense)' : ''}">🏦 Balance <b>${f2(imp.balance.amount)}</b></span>` : ''}<span class="chip" style="color:var(--income)">+${f2(inc)}</span><span class="chip" style="color:var(--expense)">−${f2(out)}</span>`;
     document.getElementById('impList').innerHTML = rows.length ? rows.map((r, i) => `
       <div class="imp-row ${r.dup ? 'dup' : ''}">
         <input type="checkbox" data-inc="${i}" ${r.include ? 'checked' : ''} aria-label="Include" />
@@ -2037,8 +2108,9 @@
         <span class="amt ${r.type === 'income' ? 'inc' : ''}">${r.type === 'income' ? '+' : '−'}${f2(r.amount)}</span>
       </div>`).join('') : `<div class="empty"><span class="serif">No transactions found</span>${needMap ? 'Choose the columns above.' : 'Check that this is a transaction export (Umsätze).'}</div>`;
     const go = document.getElementById('impGo');
-    go.hidden = false; go.disabled = !chosen.length; go.style.opacity = chosen.length ? 1 : .5;
-    go.textContent = `Import ${chosen.length} transaction${chosen.length === 1 ? '' : 's'}`;
+    const enrichable = rows.some(r => r.dup && r.bal != null);
+    go.hidden = false; go.disabled = !chosen.length && !enrichable; go.style.opacity = (chosen.length || enrichable) ? 1 : .5;
+    go.textContent = chosen.length ? `Import ${chosen.length} transaction${chosen.length === 1 ? '' : 's'}` : (enrichable ? 'Update balances' : 'Import 0 transactions');
     const cw = document.getElementById('impCurWrap');
     cw.hidden = !(imp.currency && imp.currency !== state.currency);
     document.getElementById('impCurLabel').textContent = `Switch display currency to ${imp.currency} (currently ${state.currency})`;
@@ -2073,16 +2145,22 @@
   });
   document.getElementById('impGo').addEventListener('click', e => {
     const chosen = imp.rows.filter(r => r.include);
-    if (!chosen.length) return;
+    const canEnrich = imp.rows.some(r => r.dup && r.bal != null);
+    if (!chosen.length && !canEnrich) return;
     state.rules = state.rules || {};
+    // Balances also fill in on entries that were imported before this feature existed
+    const byKey = {}; state.txns.forEach(t => { if (t.importKey) byKey[t.importKey] = t; });
+    let enriched = 0;
+    imp.rows.forEach(r => { const t = byKey[r.key]; if (t && r.bal != null) { if (t.bal == null) enriched++; t.bal = r.bal; t.ord = r.ord; } });
+    if (imp.balance && (!state.bankBalance || imp.balance.date >= state.bankBalance.date)) state.bankBalance = imp.balance;
     chosen.forEach(r => {
-      state.txns.push({ id: uid(), type: r.type, category: r.category, amount: r.amount, date: r.date, note: r.note, payee: r.payee, importKey: r.key });
+      state.txns.push({ id: uid(), type: r.type, category: r.category, amount: r.amount, date: r.date, note: r.note, payee: r.payee, importKey: r.key, ...(r.bal != null ? { bal: r.bal } : {}), ord: r.ord });
       if (r.userCat && r.payee) state.rules[normPayee(r.payee)] = r.category;
     });
     if (!document.getElementById('impCurWrap').hidden && document.getElementById('impCur').checked) state.currency = imp.currency;
-    view = budgetMonthOf(state.txns[state.txns.length - chosen.length]);
+    if (chosen.length) view = budgetMonthOf(state.txns[state.txns.length - chosen.length]);
     save(); close(e.target); render();
-    toast(`Imported ${chosen.length} transactions`, '🏦');
+    toast(chosen.length ? `Imported ${chosen.length} transactions${enriched ? ` · balances added to ${enriched} older ones` : ''}` : `Balances added to ${enriched} entries`, '🏦');
   });
   // Drop a CSV anywhere on the page
   let dragDepth = 0;
