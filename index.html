@@ -450,7 +450,13 @@
   .cat-grid button { font-size: 13px; padding: 7px 12px; border-radius: 999px; background: rgba(var(--ink),.05); border: 1px solid var(--stroke); color: var(--muted); transition: all .2s; }
   .cat-grid button:hover { color: var(--text); }
   .cat-grid button.on { background: color-mix(in srgb, var(--c) 25%, transparent); border-color: var(--c); color: var(--text); }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .row2 > * { min-width: 0; }
+  /* iOS gives date inputs a built-in minimum width that overflows narrow columns */
+  input[type="date"].input { display: block; width: 100%; min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; text-align: left; }
+  input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
+  .modal { overflow-x: hidden; }
+  select.input { text-overflow: ellipsis; white-space: nowrap; overflow: hidden; padding-right: 34px; }
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
   .modal .seg { width: 100%; margin-bottom: 18px; }
   .modal .seg button { flex: 1; font-size: 13px; padding: 9px; }
@@ -563,8 +569,10 @@
     .wrap { padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(96px + max(10px, calc(env(safe-area-inset-bottom, 0px) - 14px))) max(16px, env(safe-area-inset-left, 0px)); }
     /* The page scrolls inside .wrap so the native full-height scrollbar can be replaced by an iOS-style
        indicator that runs only between the top bar and the tab bar */
-    html, body { height: 100%; overflow: hidden; }
-    .wrap { position: fixed; inset: 0; max-width: none; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+    /* Screens only move up and down: no sideways drift and no rubber-band bounce */
+    .wrap, .modal { overflow-x: hidden; overscroll-behavior: none; touch-action: pan-y; }
+    .wrap { position: fixed; inset: 0; max-width: none; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .wrap::-webkit-scrollbar { display: none; }
     .scroll-ind { display: block; }
     /* Sticky offsets inside a scroll container are measured from its padding edge, which already
@@ -576,7 +584,7 @@
     .scrim.sheet .modal {
       width: 100%; height: 100%; max-height: none; border-radius: 0; border: 0; box-shadow: none;
       background: var(--bg); padding: 0 max(20px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
-      transform: translateY(6%); overscroll-behavior: contain;
+      transform: translateY(6%);
     }
     .scrim.sheet .modal::before, .scrim.sheet .modal::after { display: none; }
     .scrim.sheet.open .modal { transform: none; }
@@ -590,10 +598,12 @@
     .sheet-done { display: block; font-size: 16px; font-weight: 600; color: var(--accent-2); padding: 6px 2px; -webkit-tap-highlight-color: transparent; }
     .sheet-foot { display: none; }
     /* Everything else becomes an iOS-style bottom sheet */
+    .scrim { touch-action: none; }
+    .scrim .modal { touch-action: pan-y; }
     .scrim:not(.sheet) { padding: 0; place-items: end stretch; }
     .scrim:not(.sheet) .modal {
       width: 100%; max-height: calc(100% - env(safe-area-inset-top, 0px) - 10px);
-      border-radius: 30px 30px 0 0; border-bottom: 0; overscroll-behavior: contain;
+      border-radius: 30px 30px 0 0; border-bottom: 0;
       padding: 10px max(20px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
       background: var(--sheet-bg); transform: translateY(105%); transition: transform .5s var(--ease);
     }
@@ -935,7 +945,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.9';
+  const APP_VERSION = '1.10';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
@@ -1318,7 +1328,7 @@
     const autoM = autoShift({ type: 'income', category: txCat, date }) ? next : own;
     const mn = k => monthName(k, 'long').split(' ')[0];
     document.getElementById('fBm').innerHTML =
-      `<option value="">Automatic (${mn(autoM)})</option><option value="same">${mn(own)}</option><option value="next">${mn(next)}</option>`;
+      `<option value="">Auto (${mn(autoM)})</option><option value="same">${mn(own)}</option><option value="next">${mn(next)}</option>`;
     document.getElementById('fBm').value = txBm;
   }
   function openTx(t) {
