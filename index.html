@@ -28,7 +28,7 @@
     --ease: cubic-bezier(.22, 1, .36, 1);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { color-scheme: dark; }
+  html, :root { color-scheme: dark; }
   body {
     font-family: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
     background: var(--bg);
@@ -1128,12 +1128,19 @@
     } catch (err) { toast('That file doesn’t look like a Lumen backup', '⚠️'); }
     e.target.value = '';
   });
+  // Two-tap confirm (works everywhere, including sandboxed frames where confirm() is blocked)
+  function armed(btn, label) {
+    if (btn.dataset.armed) return true;
+    const orig = btn.innerHTML; btn.dataset.armed = '1'; btn.innerHTML = label;
+    setTimeout(() => { delete btn.dataset.armed; btn.innerHTML = orig; }, 3000);
+    return false;
+  }
   document.getElementById('loadDemo').addEventListener('click', e => {
-    if (!confirm('Replace your data with demo data?')) return;
+    if (!armed(e.currentTarget, 'Tap again to replace your data with demo data')) return;
     state = demoState(); view = monthKey(new Date()); save(); render(); close(e.target); toast('Demo data loaded', '✦');
   });
   document.getElementById('clearAll').addEventListener('click', e => {
-    if (!confirm('Erase all entries and goals? This cannot be undone.')) return;
+    if (!armed(e.currentTarget, 'Tap again to erase everything (can’t be undone)')) return;
     state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [] }; view = monthKey(new Date()); save(); render(); close(e.target); toast('Fresh start', '✓');
   });
 
