@@ -353,6 +353,44 @@
   .settings-list { display: flex; flex-direction: column; gap: 8px; }
   .settings-list .btn { justify-content: flex-start; width: 100%; height: 44px; border-radius: 14px; }
   .danger { color: var(--expense); }
+  .modal.wide { width: min(820px, 100%); }
+  .imp-help { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 16px; }
+  .imp-help ol { padding-left: 18px; display: grid; gap: 4px; margin-top: 8px; }
+  .imp-help b { color: var(--text); font-weight: 500; }
+  .dropzone {
+    display: grid; place-items: center; gap: 6px; text-align: center; padding: 34px 16px; border-radius: 20px;
+    border: 1.5px dashed var(--stroke-strong); background: rgba(255,255,255,.03); cursor: pointer; transition: all .25s var(--ease);
+  }
+  .dropzone:hover, .dropzone.over { background: rgba(167,139,250,.1); border-color: var(--accent); }
+  .dropzone .big { font-size: 30px; }
+  .dropzone small { color: var(--faint); font-size: 12px; }
+  .imp-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .imp-summary .chip { cursor: default; }
+  .imp-summary .chip b { color: var(--text); font-weight: 500; }
+  .imp-map { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 600px) { .imp-map { grid-template-columns: 1fr; } }
+  .imp-list { max-height: 46vh; overflow-y: auto; border: 1px solid var(--stroke); border-radius: 16px; scrollbar-width: thin; }
+  .imp-row { display: grid; grid-template-columns: 22px 78px 1fr 150px 96px; gap: 10px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+  .imp-row:last-child { border-bottom: 0; }
+  .imp-row.dup { opacity: .45; }
+  .imp-row .d { color: var(--faint); font-size: 12px; }
+  .imp-row .p { min-width: 0; }
+  .imp-row .p div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .imp-row .p div + div { color: var(--faint); font-size: 11px; }
+  .imp-row .amt { text-align: right; font-weight: 500; }
+  .imp-row .amt.inc { color: var(--income); }
+  .imp-row select { height: 32px; padding: 0 28px 0 10px; border-radius: 10px; font-size: 12px; background-position: right 10px center; }
+  .imp-row input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
+  .tag { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.08); color: var(--muted); margin-left: 6px; }
+  @media (max-width: 640px) {
+    .imp-row { grid-template-columns: 22px 1fr 90px; }
+    .imp-row .d { display: none; }
+    .imp-row select { grid-column: 2 / 4; width: 100%; }
+  }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin-top: 14px; }
+  .check input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .drop-overlay { position: fixed; inset: 12px; z-index: 80; border-radius: 28px; border: 2px dashed var(--accent); background: rgba(20,14,40,.55); backdrop-filter: blur(8px); display: grid; place-items: center; font-size: 22px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .drop-overlay.show { opacity: 1; }
 
   /* ---------- Toast ---------- */
   .toast {
@@ -484,6 +522,7 @@
       <div class="card-head" style="flex-wrap:wrap">
         <div class="card-title"><span class="dot"></span>Activity</div>
         <div class="tx-tools">
+          <button class="btn btn-ghost" data-import style="height:34px;font-size:12px;padding:0 14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Import bank CSV</button>
           <div class="seg" id="txFilter"><span class="pill"></span><button data-f="all" class="on">All</button><button data-f="income">Income</button><button data-f="expense">Expenses</button></div>
           <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="txSearch" placeholder="Search…" /></label>
         </div>
@@ -553,6 +592,42 @@
   </form>
 </div>
 
+<!-- Bank import modal -->
+<div class="scrim" id="importModal">
+  <div class="modal glass wide">
+    <h3>Import <em>bank statement</em></h3>
+    <div id="impStep1">
+      <div class="imp-help">
+        Works with <b>Volksbank / VR-Banking</b> exports (and most other banks' CSV files). Your file is read right here in the browser and never uploaded.
+        <ol>
+          <li>Log in to online banking at <b>voba-oberberg.de</b> (or the VR Banking app on desktop).</li>
+          <li>Open your account and go to <b>Umsätze</b> (transactions), then pick a date range.</li>
+          <li>Choose <b>Exportieren → CSV</b> and save the file.</li>
+          <li>Drop it below. Duplicates are skipped, so overlapping date ranges are fine.</li>
+        </ol>
+      </div>
+      <label class="dropzone" id="dropzone">
+        <span class="big">🏦</span>
+        <span>Drop your <b>.csv</b> here or click to choose</span>
+        <small>Semicolon or comma separated · German or English number formats</small>
+        <input type="file" id="csvFile" accept=".csv,text/csv,text/plain" hidden />
+      </label>
+    </div>
+    <div id="impStep2" hidden>
+      <div class="imp-summary" id="impSummary"></div>
+      <div class="imp-map" id="impMap" hidden></div>
+      <div class="imp-list" id="impList"></div>
+      <label class="check" id="impCurWrap" hidden><input type="checkbox" id="impCur" checked /> <span id="impCurLabel">Switch display currency to EUR</span></label>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="impBack" style="margin-right:auto" hidden>← Other file</button>
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="button" class="btn btn-primary" id="impGo" hidden>Import</button>
+    </div>
+  </div>
+</div>
+<div class="drop-overlay" id="dropOverlay">Drop your bank CSV to import</div>
+
 <!-- Settings modal -->
 <div class="scrim" id="settingsModal">
   <div class="modal glass">
@@ -567,6 +642,7 @@
     <div class="settings-list">
       <button class="btn btn-ghost" id="exportJson">⤓ &nbsp;Export backup (JSON)</button>
       <button class="btn btn-ghost" id="exportCsv">⤓ &nbsp;Export transactions (CSV)</button>
+      <button class="btn btn-ghost" data-import>🏦 &nbsp;Import bank statement (CSV)</button>
       <button class="btn btn-ghost" id="importJson">⤒ &nbsp;Import backup</button>
       <button class="btn btn-ghost" id="loadDemo">✦ &nbsp;Load demo data</button>
       <button class="btn btn-ghost danger" id="clearAll">✕ &nbsp;Start fresh (erase everything)</button>
@@ -604,6 +680,9 @@
       { id: 'savings', name: 'Savings', e: '🏦', c: '#a78bfa', b: 'future' },
       { id: 'investing', name: 'Investing', e: '🌱', c: '#4ade80', b: 'future' },
       { id: 'debt', name: 'Debt payoff', e: '🔓', c: '#fb7185', b: 'future' },
+      { id: 'insurance', name: 'Insurance', e: '🛡️', c: '#818cf8', b: 'needs' },
+      { id: 'cash', name: 'Cash', e: '💶', c: '#facc15', b: 'wants' },
+      { id: 'other_out', name: 'Other', e: '🧾', c: '#94a3b8', b: 'wants' },
     ],
   };
   const BUCKETS = [
@@ -1000,7 +1079,10 @@
     const amount = Math.round(parseFloat(document.getElementById('fAmount').value) * 100) / 100;
     if (!(amount > 0)) return toast('Enter an amount above zero', '⚠️');
     const data = { type: txType, category: txCat, amount, date: document.getElementById('fDate').value, note: document.getElementById('fNote').value.trim() };
-    if (editingTx) Object.assign(editingTx, data);
+    if (editingTx) {
+      if (editingTx.payee && editingTx.category !== data.category) { state.rules = state.rules || {}; state.rules[normPayee(editingTx.payee)] = data.category; }
+      Object.assign(editingTx, data);
+    }
     else {
       state.txns.push({ id: uid(), ...data });
       const gid = document.getElementById('fGoal').value;
@@ -1123,7 +1205,7 @@
     try {
       const data = JSON.parse(await f.text());
       if (!Array.isArray(data.txns)) throw 0;
-      state = { currency: data.currency || 'USD', split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [] };
+      state = { currency: data.currency || 'USD', split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {} };
       save(); render(); toast('Backup restored', '✓');
     } catch (err) { toast('That file doesn’t look like a Lumen backup', '⚠️'); }
     e.target.value = '';
@@ -1141,7 +1223,7 @@
   });
   document.getElementById('clearAll').addEventListener('click', e => {
     if (!armed(e.currentTarget, 'Tap again to erase everything (can’t be undone)')) return;
-    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [] }; view = monthKey(new Date()); save(); render(); close(e.target); toast('Fresh start', '✓');
+    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [], rules: state.rules || {} }; view = monthKey(new Date()); save(); render(); close(e.target); toast('Fresh start', '✓');
   });
 
   // Month nav
@@ -1191,6 +1273,237 @@
       if (++f < 140) requestAnimationFrame(tick); else cv.remove();
     })();
   }
+
+  /* ================= Bank CSV import ================= */
+  const OUT_RULES = [
+    [/miete|wohnungsbau|hausverwaltung|vermiet|nebenkosten|wohnungsgenossenschaft|immobilien/i, 'housing'],
+    [/rewe|edeka|aldi|lidl|netto|penny|kaufland|globus|tegut|norma|real\b|hit markt|marktkauf|biomarkt|denns|alnatura|metzgerei|bäckerei|baeckerei/i, 'groceries'],
+    [/stadtwerke|aggerenergie|agger energie|bergische energie|e\.on|eon energie|rwe|vattenfall|enbw|strom|gas\b|wasser|telekom|vodafone|o2\b|telefonica|1&1|1und1|congstar|unitymedia|rundfunk|ard zdf|gez|abfall|müll/i, 'utilities'],
+    [/deutsche bahn|db vertrieb|db fernverkehr|bahn\b|vrs\b|vrr\b|ovag|deutschlandticket|shell|aral|esso|jet tankstelle|tankstelle|total ?energies|agip|avia|raiffeisen tank|parkhaus|parken|flixbus|uber|bolt|freenow|tier\b|kfz-steuer|atu\b|werkstatt/i, 'transport'],
+    [/apotheke|arzt|ärzt|praxis|zahnarzt|klinik|krankenhaus|physio|optiker|fielmann|dm-drogerie|dm drogerie|rossmann|müller drog/i, 'health'],
+    [/versicherung|allianz|huk|ergo\b|axa\b|debeka|signal iduna|r\+v|ruv|devk|provinzial|generali|gothaer|barmenia|haftpflicht/i, 'insurance'],
+    [/netflix|spotify|disney|amazon prime|prime video|apple\.com|itunes|google \*|youtube|audible|dazn|sky deutschland|wow\b|chatgpt|openai|adobe|microsoft|icloud|patreon|zeit online|spiegel/i, 'subs'],
+    [/restaurant|lieferando|wolt|mcdonald|burger king|kfc|subway|pizz|döner|doener|imbiss|cafe|café|starbucks|coffee|bar\b|kneipe|gastst|vapiano|sushi|eiscafe/i, 'dining'],
+    [/kino|cinemaxx|cineplex|uci\b|eventim|ticketmaster|theater|museum|steam|playstation|nintendo|xbox|fitness|mcfit|urban sports|schwimmbad|bowling|freizeit/i, 'fun'],
+    [/lufthansa|eurowings|ryanair|condor|tuifly|easyjet|booking\.com|airbnb|hotel|expedia|check24 reise|holidaycheck|ferienwohnung/i, 'travel'],
+    [/trade republic|scalable|comdirect depot|ing depot|consorsbank|flatex|smartbroker|sparplan|wertpapier|depot|etf|union investment|deka\b|fondsdepot/i, 'investing'],
+    [/sparkonto|tagesgeld|sparbuch|bauspar|schwäbisch hall|schwaebisch hall|wüstenrot|vl-sparen|vermögenswirksam|sparen/i, 'savings'],
+    [/kredit|darlehen|tilgung|ratenzahlung|finanzierung|santander|targobank|easycredit|klarna|ratenkauf/i, 'debt'],
+    [/bargeld|geldautomat|auszahlung|atm\b|barabhebung/i, 'cash'],
+    [/amazon|amzn|zalando|otto\b|ikea|mediamarkt|media markt|saturn|h&m|primark|c&a|tk maxx|decathlon|obi\b|bauhaus|hornbach|toom|thalia|ebay|etsy|temu|shein|zara|deichmann|douglas|tchibo|action\b|paypal/i, 'shopping'],
+  ];
+  const IN_RULES = [
+    [/lohn|gehalt|bezüge|bezuege|entgelt|besoldung|salary|payroll|arbeitgeber/i, 'salary'],
+    [/honorar|rechnung|invoice|freelanc|auftrag nr/i, 'freelance'],
+    [/dividende|zinsen|ertrag|ausschüttung|ausschuettung|kapitalertrag|trade republic|scalable/i, 'invest'],
+    [/geschenk|geburtstag|weihnacht|gift/i, 'gift'],
+    [/ebay|etsy|kleinanzeigen|vinted|shopify|stripe|paypal/i, 'business'],
+  ];
+  const normPayee = s => String(s || '').toLowerCase().replace(/[0-9]/g, '').replace(/[^a-zäöüß&+ ]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+  function autoCat(type, payee, purpose, btext) {
+    const r = state.rules && state.rules[normPayee(payee)];
+    if (r && CATS[type].some(c => c.id === r)) return r;
+    const hay = `${payee} ${purpose} ${btext}`;
+    if (type === 'income' && /lohn|gehalt|rente/i.test(btext)) return 'salary';
+    for (const [re, cat] of (type === 'income' ? IN_RULES : OUT_RULES)) if (re.test(hay)) return cat;
+    return type === 'income' ? 'other_in' : 'other_out';
+  }
+
+  function parseCSV(text, delim) {
+    const rows = []; let row = [], cell = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) {
+        if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === delim) { row.push(cell); cell = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+      else cell += ch;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows.map(r => r.map(c => c.trim())).filter(r => r.some(c => c));
+  }
+  function parseAmount(s) {
+    if (s == null) return NaN;
+    let t = String(s).replace(/[€$£\s ]|EUR/gi, '');
+    const neg = /^-|-$|^\(.*\)$/.test(t); t = t.replace(/[-+()]/g, '');
+    const lc = t.lastIndexOf(','), ld = t.lastIndexOf('.');
+    if (lc > ld) t = t.replace(/\./g, '').replace(',', '.'); else t = t.replace(/,/g, '');
+    const n = parseFloat(t); return isNaN(n) ? NaN : (neg ? -n : n);
+  }
+  function parseDate(s) {
+    s = String(s || '').trim(); let m;
+    if ((m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/))) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
+    if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})/))) return `${m[1]}-${m[2]}-${m[3]}`;
+    if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    return null;
+  }
+
+  let imp = null; // { headers, data, map, format, rows, currency }
+  const FIELD_RE = {
+    date: [/^buchungstag$|^buchungsdatum$|^datum$|^date$|booking ?date|^transaction date/i, /valuta|wertstellung|value date/i],
+    amount: [/^betrag|^umsatz$|^amount|^betrag \(eur\)/i],
+    payee: [/name zahlungsbeteiligter|auftraggeber\/zahlungsempf|zahlungsempf|empfänger\/zahlungspfl|beg(ü|ue)nstigter|auftraggeber|payee|counterparty|^name$/i],
+    purpose: [/verwendungszweck|vorgang\/verwendungszweck|description|beschreibung|memo|reference/i],
+    btext: [/^buchungstext$|^vorgang$|umsatzart|transaction type/i],
+    currency: [/w(ä|ae)hrung|currency/i],
+  };
+  function findCol(headers, field) {
+    for (const re of FIELD_RE[field]) { const i = headers.findIndex(h => re.test(h)); if (i >= 0) return i; }
+    return -1;
+  }
+
+  async function handleCsv(file) {
+    const buf = await file.arrayBuffer();
+    let text;
+    try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { text = new TextDecoder('windows-1252').decode(buf); }
+    text = text.replace(/^﻿/, '');
+    const firstLines = text.split(/\r?\n/).slice(0, 30).join('\n');
+    const delim = [';', ',', '\t'].map(d => [d, (firstLines.match(new RegExp(d === '\t' ? '\t' : '\\' + d, 'g')) || []).length]).sort((a, b) => b[1] - a[1])[0][0];
+    const rows = parseCSV(text, delim);
+    // header row = first row that names a date column and has several cells
+    let hi = rows.findIndex(r => r.length >= 3 && r.some(c => /buchungstag|buchungsdatum|^datum$|^date$|booking date|transaction date/i.test(c)));
+    if (hi < 0) hi = rows.findIndex(r => r.length >= 3);
+    if (hi < 0) return toast('That file has no rows I can read', '⚠️');
+    const headers = rows[hi].map((h, i) => h || `Column ${i + 1}`);
+    const data = rows.slice(hi + 1).filter(r => r.length >= Math.min(3, headers.length));
+    const map = {}; Object.keys(FIELD_RE).forEach(f => map[f] = findCol(headers, f));
+    // Older VR format: amount followed by a Soll/Haben column holding S or H
+    map.sh = headers.findIndex((h, i) => { const v = data.slice(0, 40).map(r => r[i] || '').filter(Boolean); return v.length > 0 && v.every(x => /^(S|H)$/.test(x)); });
+    // Payee: of the name-like columns, take the one that varies most (the other usually holds your own name)
+    const nameCols = headers.map((h, i) => [h, i]).filter(([h]) => /zahlungsbeteiligter|auftraggeber|empf(ä|ae)nger|zahlungspflichtiger|beg(ü|ue)nstigter|payee|counterparty/i.test(h)).map(([, i]) => i);
+    if (nameCols.length > 1) map.payee = nameCols.map(i => [i, new Set(data.map(r => r[i]).filter(Boolean)).size]).sort((a, b) => b[1] - a[1])[0][0];
+    const H = headers.join('|').toLowerCase();
+    const format = /name zahlungsbeteiligter/.test(H) ? 'Volksbank · VR-Banking export'
+      : /auftraggeber\/zahlungsempf/.test(H) ? 'Volksbank · classic export'
+      : 'CSV file';
+    imp = { headers, data, map, format };
+    buildImportRows();
+    showImportStep(2);
+  }
+
+  function buildImportRows() {
+    const { data, map } = imp;
+    const existing = new Set(state.txns.map(t => t.importKey).filter(Boolean));
+    const seen = {};
+    let skipped = 0, curCount = {};
+    imp.rows = [];
+    if (map.date < 0 || map.amount < 0) { renderImport(); return; }
+    data.forEach(r => {
+      const date = parseDate(r[map.date]);
+      let amt = parseAmount(r[map.amount]);
+      if (!date || isNaN(amt) || amt === 0) { skipped++; return; }
+      if (map.sh >= 0 && r[map.sh] === 'S') amt = -Math.abs(amt);
+      const payee = map.payee >= 0 ? r[map.payee] : '';
+      const purpose = (map.purpose >= 0 ? r[map.purpose] : '').replace(/\s+/g, ' ');
+      const btext = map.btext >= 0 ? r[map.btext] : '';
+      if (/^(anfangs|end)saldo|^saldo/i.test(`${payee} ${purpose}`)) { skipped++; return; }
+      if (map.currency >= 0 && r[map.currency]) curCount[r[map.currency]] = (curCount[r[map.currency]] || 0) + 1;
+      const type = amt > 0 ? 'income' : 'expense';
+      const base = `${date}|${amt.toFixed(2)}|${normPayee(payee)}|${purpose.slice(0, 30).toLowerCase()}`;
+      seen[base] = (seen[base] || 0) + 1;
+      const key = `${base}#${seen[base]}`;
+      const dup = existing.has(key);
+      const note = (payee || purpose || btext || 'Bank transaction').slice(0, 70);
+      imp.rows.push({ date, amount: Math.round(Math.abs(amt) * 100) / 100, type, payee, purpose, btext, note, key, dup, include: !dup, category: autoCat(type, payee, purpose, btext), userCat: false });
+    });
+    imp.rows.sort((a, b) => b.date.localeCompare(a.date));
+    imp.skipped = skipped;
+    imp.currency = Object.entries(curCount).sort((a, b) => b[1] - a[1])[0]?.[0] || (/volksbank/i.test(imp.format) ? 'EUR' : null);
+    renderImport();
+  }
+
+  function renderImport() {
+    const { rows = [], headers, map } = imp;
+    const needMap = map.date < 0 || map.amount < 0;
+    const mapEl = document.getElementById('impMap');
+    mapEl.hidden = !needMap && !imp.showMap;
+    if (!mapEl.hidden) {
+      const opt = f => `<option value="-1">—</option>` + headers.map((h, i) => `<option value="${i}" ${map[f] === i ? 'selected' : ''}>${esc(h)}</option>`).join('');
+      mapEl.innerHTML = [['date', 'Date column'], ['amount', 'Amount column'], ['payee', 'Description / payee']].map(([f, l]) =>
+        `<div class="field" style="margin:0"><label for="map_${f}">${l}</label><select class="input" id="map_${f}" data-map="${f}">${opt(f)}</select></div>`).join('');
+      imp.showMap = true;
+    }
+    const fresh = rows.filter(r => !r.dup), dups = rows.length - fresh.length;
+    const chosen = rows.filter(r => r.include);
+    const inc = chosen.filter(r => r.type === 'income').reduce((a, r) => a + r.amount, 0);
+    const out = chosen.filter(r => r.type === 'expense').reduce((a, r) => a + r.amount, 0);
+    const span = rows.length ? `${rows[rows.length - 1].date.split('-').reverse().join('.')} – ${rows[0].date.split('-').reverse().join('.')}` : '';
+    const cur = imp.currency || state.currency;
+    const f2 = n => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(n); } catch (e) { return n.toFixed(2); } };
+    document.getElementById('impSummary').innerHTML = needMap
+      ? `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip" style="color:var(--warn)">Pick the date and amount columns to continue</span>`
+      : `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip"><b>${fresh.length}</b> new</span>${dups ? `<span class="chip"><b>${dups}</b> already imported</span>` : ''}${span ? `<span class="chip">${span}</span>` : ''}<span class="chip" style="color:var(--income)">+${f2(inc)}</span><span class="chip" style="color:var(--expense)">−${f2(out)}</span>`;
+    document.getElementById('impList').innerHTML = rows.length ? rows.map((r, i) => `
+      <div class="imp-row ${r.dup ? 'dup' : ''}">
+        <input type="checkbox" data-inc="${i}" ${r.include ? 'checked' : ''} aria-label="Include" />
+        <span class="d">${r.date.split('-').reverse().join('.')}</span>
+        <div class="p"><div>${esc(r.note)}${r.dup ? '<span class="tag">already imported</span>' : ''}</div><div>${esc([r.btext, r.purpose].filter(Boolean).join(' · ').slice(0, 90))}</div></div>
+        <select class="input" data-cat="${i}" aria-label="Category">${CATS[r.type].map(c => `<option value="${c.id}" ${c.id === r.category ? 'selected' : ''}>${c.e} ${c.name}</option>`).join('')}</select>
+        <span class="amt ${r.type === 'income' ? 'inc' : ''}">${r.type === 'income' ? '+' : '−'}${f2(r.amount)}</span>
+      </div>`).join('') : `<div class="empty"><span class="serif">No transactions found</span>${needMap ? 'Choose the columns above.' : 'Check that this is a transaction export (Umsätze).'}</div>`;
+    const go = document.getElementById('impGo');
+    go.hidden = false; go.disabled = !chosen.length; go.style.opacity = chosen.length ? 1 : .5;
+    go.textContent = `Import ${chosen.length} transaction${chosen.length === 1 ? '' : 's'}`;
+    const cw = document.getElementById('impCurWrap');
+    cw.hidden = !(imp.currency && imp.currency !== state.currency);
+    document.getElementById('impCurLabel').textContent = `Switch display currency to ${imp.currency} (currently ${state.currency})`;
+  }
+
+  function showImportStep(n) {
+    document.getElementById('impStep1').hidden = n !== 1;
+    document.getElementById('impStep2').hidden = n !== 2;
+    document.getElementById('impBack').hidden = n !== 2;
+    document.getElementById('impGo').hidden = n !== 2;
+  }
+  function openImport() { imp = null; showImportStep(1); document.querySelectorAll('.scrim.open').forEach(s => s.classList.remove('open')); open('importModal'); }
+  document.querySelectorAll('[data-import]').forEach(b => b.addEventListener('click', openImport));
+  document.getElementById('impBack').addEventListener('click', () => showImportStep(1));
+  document.getElementById('csvFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) handleCsv(f); e.target.value = ''; });
+  const dz = document.getElementById('dropzone');
+  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, () => dz.classList.remove('over')));
+  dz.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleCsv(f); });
+  document.getElementById('impMap').addEventListener('change', e => { const f = e.target.dataset.map; if (!f) return; imp.map[f] = +e.target.value; buildImportRows(); });
+  document.getElementById('impList').addEventListener('change', e => {
+    const i = e.target.dataset.inc ?? e.target.dataset.cat; if (i === undefined) return;
+    const r = imp.rows[i];
+    if (e.target.dataset.inc !== undefined) r.include = e.target.checked;
+    else {
+      r.category = e.target.value; r.userCat = true;
+      // apply the same choice to other rows from this payee that weren't hand-picked
+      const k = normPayee(r.payee);
+      if (k) imp.rows.forEach(o => { if (o !== r && !o.userCat && o.type === r.type && normPayee(o.payee) === k) o.category = r.category; });
+    }
+    renderImport();
+  });
+  document.getElementById('impGo').addEventListener('click', e => {
+    const chosen = imp.rows.filter(r => r.include);
+    if (!chosen.length) return;
+    state.rules = state.rules || {};
+    chosen.forEach(r => {
+      state.txns.push({ id: uid(), type: r.type, category: r.category, amount: r.amount, date: r.date, note: r.note, payee: r.payee, importKey: r.key });
+      if (r.userCat && r.payee) state.rules[normPayee(r.payee)] = r.category;
+    });
+    if (!document.getElementById('impCurWrap').hidden && document.getElementById('impCur').checked) state.currency = imp.currency;
+    view = chosen[0].date.slice(0, 7);
+    save(); close(e.target); render();
+    toast(`Imported ${chosen.length} transactions`, '🏦');
+  });
+  // Drop a CSV anywhere on the page
+  let dragDepth = 0;
+  const overlay = document.getElementById('dropOverlay');
+  const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
+  document.addEventListener('dragenter', e => { if (!hasFiles(e) || document.getElementById('importModal').classList.contains('open')) return; dragDepth++; overlay.classList.add('show'); });
+  document.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; overlay.classList.remove('show'); } });
+  document.addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
+  document.addEventListener('drop', e => {
+    if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; overlay.classList.remove('show');
+    const f = e.dataTransfer.files[0]; if (!f) return;
+    if (!document.getElementById('importModal').classList.contains('open')) { openImport(); }
+    handleCsv(f);
+  });
 
   /* ================= Boot ================= */
   state = load();
