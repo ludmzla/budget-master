@@ -1,0 +1,1196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lumen — Budget</title>
+<meta name="description" content="A glassy, local-first budget tracker for organizing your income." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07070c;
+    --text: #f4f4f8;
+    --muted: rgba(244, 244, 248, .58);
+    --faint: rgba(244, 244, 248, .32);
+    --glass: rgba(255, 255, 255, .055);
+    --glass-strong: rgba(255, 255, 255, .09);
+    --stroke: rgba(255, 255, 255, .11);
+    --stroke-strong: rgba(255, 255, 255, .2);
+    --income: #5eead4;
+    --expense: #fb7185;
+    --accent: #a78bfa;
+    --accent-2: #60a5fa;
+    --warn: #fbbf24;
+    --radius: 24px;
+    --blur: 22px;
+    --ease: cubic-bezier(.22, 1, .36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { color-scheme: dark; }
+  body {
+    font-family: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "tnum";
+  }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 0; background: none; }
+  .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; }
+
+  /* ---------- Aurora background ---------- */
+  .aurora { position: fixed; inset: 0; z-index: -2; overflow: hidden; }
+  .blob {
+    position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55;
+    animation: drift 26s var(--ease) infinite alternate;
+  }
+  .b1 { width: 52vw; height: 52vw; left: -12vw; top: -14vw; background: radial-gradient(circle, #7c3aed 0%, transparent 65%); }
+  .b2 { width: 46vw; height: 46vw; right: -10vw; top: 8vh; background: radial-gradient(circle, #2563eb 0%, transparent 65%); animation-delay: -8s; animation-duration: 32s; }
+  .b3 { width: 40vw; height: 40vw; left: 30vw; bottom: -18vw; background: radial-gradient(circle, #0d9488 0%, transparent 65%); animation-delay: -14s; animation-duration: 29s; }
+  .b4 { width: 26vw; height: 26vw; right: 18vw; bottom: 6vh; background: radial-gradient(circle, #db2777 0%, transparent 65%); opacity: .35; animation-delay: -4s; }
+  @keyframes drift {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(6vw, 4vh) scale(1.12); }
+    100% { transform: translate(-4vw, 8vh) scale(.94); }
+  }
+  .grain {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .07; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .gridlines {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 70%);
+  }
+
+  /* ---------- Glass ---------- */
+  .glass {
+    position: relative;
+    background: linear-gradient(155deg, rgba(255,255,255,.085), rgba(255,255,255,.025) 60%);
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius);
+    backdrop-filter: blur(var(--blur)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(150%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 20px 50px -20px rgba(0,0,0,.6);
+    isolation: isolate;
+  }
+  .glass::before { /* cursor spotlight */
+    content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, -200%), rgba(255,255,255,.08), transparent 45%);
+    opacity: 0; transition: opacity .4s;
+  }
+  .glass:hover::before { opacity: 1; }
+  .glass::after { /* edge highlight following cursor */
+    content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; padding: 1px;
+    background: radial-gradient(300px circle at var(--mx, 50%) var(--my, -200%), rgba(167,139,250,.6), transparent 50%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: 0; transition: opacity .4s;
+  }
+  .glass:hover::after { opacity: 1; }
+
+  /* ---------- Layout ---------- */
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 20px 24px 64px; }
+  nav.top {
+    position: sticky; top: 14px; z-index: 20;
+    display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 18px;
+    border-radius: 999px; margin-bottom: 28px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.02em; font-size: 17px; }
+  .logo-mark {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: conic-gradient(from 200deg, #a78bfa, #60a5fa, #5eead4, #f472b6, #a78bfa);
+    box-shadow: 0 0 20px rgba(167,139,250,.6);
+    position: relative;
+  }
+  .logo-mark::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--bg); opacity: .85; }
+  .spacer { flex: 1; }
+  .month-switch { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,.05); border: 1px solid var(--stroke); border-radius: 999px; padding: 4px; }
+  .month-switch span { min-width: 128px; text-align: center; font-size: 14px; font-weight: 500; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+    color: var(--muted); transition: background .2s, color .2s, transform .2s var(--ease);
+  }
+  .icon-btn:hover { background: rgba(255,255,255,.1); color: var(--text); }
+  .icon-btn:active { transform: scale(.92); }
+  .icon-btn svg { width: 16px; height: 16px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 999px;
+    font-weight: 500; font-size: 14px; transition: transform .25s var(--ease), box-shadow .25s, background .2s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn-primary {
+    background: linear-gradient(180deg, #fff, #dcdcf0); color: #0b0b12;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.4), 0 8px 30px -6px rgba(167,139,250,.7);
+  }
+  .btn-primary:hover { box-shadow: 0 0 0 1px rgba(255,255,255,.6), 0 10px 40px -4px rgba(167,139,250,.9); transform: translateY(-1px); }
+  .btn-ghost { background: rgba(255,255,255,.06); border: 1px solid var(--stroke); }
+  .btn-ghost:hover { background: rgba(255,255,255,.12); }
+  .btn svg { width: 16px; height: 16px; }
+  kbd { font-family: "Geist Mono", monospace; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: rgba(0,0,0,.12); border: 1px solid rgba(0,0,0,.15); }
+
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+  .card { padding: 24px; }
+  .span-8 { grid-column: span 8; } .span-4 { grid-column: span 4; }
+  .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; }
+  .span-6 { grid-column: span 6; } .span-12 { grid-column: span 12; }
+  @media (max-width: 1080px) {
+    .span-8, .span-4, .span-7, .span-5, .span-6 { grid-column: span 12; }
+  }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: .02em; display: flex; align-items: center; gap: 8px; }
+  .card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted);
+    padding: 5px 12px 5px 6px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--stroke);
+  }
+  .eyebrow b { font-weight: 500; color: var(--text); background: rgba(167,139,250,.25); border-radius: 999px; padding: 1px 8px; }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 32px; overflow: hidden; }
+  .hero h1 { font-size: clamp(40px, 5.4vw, 68px); line-height: 1; letter-spacing: -.02em; margin: 18px 0 6px; }
+  .hero h1 em { background: linear-gradient(90deg, #c4b5fd, #93c5fd 50%, #5eead4); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .08em; }
+  .hero .sub { color: var(--muted); font-size: 15px; max-width: 46ch; }
+  .balance { margin-top: 28px; display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+  .balance .label { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .balance .big { font-size: clamp(40px, 5vw, 60px); font-weight: 500; letter-spacing: -.04em; line-height: 1; }
+  .balance .big .cents { color: var(--faint); font-size: .55em; }
+  .delta { font-size: 13px; padding: 4px 10px; border-radius: 999px; margin-bottom: 8px; font-weight: 500; }
+  .delta.up { color: var(--income); background: rgba(94,234,212,.12); }
+  .delta.down { color: var(--expense); background: rgba(251,113,133,.12); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 28px; }
+  .stat { padding: 16px 18px; border-radius: 18px; background: rgba(255,255,255,.04); border: 1px solid var(--stroke); }
+  .stat .k { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .stat .v { font-size: 22px; font-weight: 500; letter-spacing: -.03em; margin-top: 6px; }
+  .stat .k i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  @media (max-width: 600px) { .stats { grid-template-columns: 1fr; } .hero { padding: 24px; } }
+  .hero-orb {
+    position: absolute; right: -80px; top: -80px; width: 320px; height: 320px; border-radius: 50%; z-index: -1;
+    background: conic-gradient(from 0deg, rgba(167,139,250,.35), rgba(96,165,250,.2), rgba(94,234,212,.3), rgba(244,114,182,.25), rgba(167,139,250,.35));
+    filter: blur(40px); animation: spin 18s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ring card */
+  .ring-card { display: flex; flex-direction: column; }
+  .ring-wrap { position: relative; width: 210px; height: 210px; margin: 6px auto 14px; }
+  .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .ring-center .pct { font-size: 46px; letter-spacing: -.04em; font-weight: 500; line-height: 1; }
+  .ring-center .pct small { font-size: 20px; color: var(--muted); }
+  .ring-center .cap { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .insights { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+  .insight { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--muted); padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.06); line-height: 1.45; }
+  .insight .ic { flex: none; width: 22px; height: 22px; border-radius: 8px; display: grid; place-items: center; font-size: 12px; }
+  .insight b { color: var(--text); font-weight: 500; }
+
+  /* ---------- Income plan (buckets) ---------- */
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font-size: 12px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--stroke);
+    color: var(--muted); transition: all .2s;
+  }
+  .chip:hover { color: var(--text); background: rgba(255,255,255,.1); }
+  .chip.active { color: #0b0b12; background: #fff; border-color: #fff; }
+  .alloc-bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; gap: 3px; margin-bottom: 22px; }
+  .alloc-bar div { transition: flex-basis .6s var(--ease); border-radius: 999px; }
+  .buckets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 760px) { .buckets { grid-template-columns: 1fr; } }
+  .bucket { padding: 18px; border-radius: 20px; background: rgba(255,255,255,.04); border: 1px solid var(--stroke); position: relative; overflow: hidden; }
+  .bucket::before { content: ""; position: absolute; width: 140px; height: 140px; border-radius: 50%; right: -50px; top: -60px; background: var(--c); opacity: .18; filter: blur(30px); }
+  .bucket .top { display: flex; justify-content: space-between; align-items: baseline; }
+  .bucket .name { font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .bucket .name i { width: 10px; height: 10px; border-radius: 4px; background: var(--c); box-shadow: 0 0 12px var(--c); }
+  .bucket .pctl { font-family: "Instrument Serif", serif; font-size: 30px; line-height: 1; }
+  .bucket .desc { font-size: 12px; color: var(--faint); margin-top: 4px; }
+  .bucket .amt { margin-top: 18px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; }
+  .bucket .amt b { color: var(--text); font-weight: 500; }
+  .meter { height: 6px; border-radius: 999px; background: rgba(255,255,255,.08); margin-top: 8px; overflow: hidden; }
+  .meter div { height: 100%; border-radius: 999px; background: var(--c); width: 0; transition: width 1s var(--ease); box-shadow: 0 0 12px var(--c); }
+  .meter.over div { background: var(--expense); box-shadow: 0 0 12px var(--expense); }
+  .bucket .left { font-size: 12px; margin-top: 8px; color: var(--faint); }
+  .bucket input[type=range] { width: 100%; margin-top: 14px; display: none; accent-color: var(--c); }
+  .editing .bucket input[type=range] { display: block; }
+  .plan-total { font-size: 12px; color: var(--muted); }
+  .plan-total.bad { color: var(--warn); }
+
+  /* ---------- Donut ---------- */
+  .donut-row { display: flex; gap: 22px; align-items: center; }
+  @media (max-width: 480px) { .donut-row { flex-direction: column; } }
+  .donut { position: relative; width: 170px; height: 170px; flex: none; }
+  .donut svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+  .donut circle.seg { transition: stroke-dasharray 1s var(--ease), stroke-dashoffset 1s var(--ease), stroke-width .25s; cursor: pointer; }
+  .donut circle.seg:hover { stroke-width: 5.2; }
+  .donut .center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+  .donut .center .v { font-size: 22px; font-weight: 500; letter-spacing: -.03em; }
+  .donut .center .k { font-size: 11px; color: var(--muted); }
+  .legend { flex: 1; display: flex; flex-direction: column; gap: 10px; width: 100%; }
+  .legend .row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .legend .row i { width: 8px; height: 8px; border-radius: 3px; flex: none; }
+  .legend .row span:nth-child(2) { flex: 1; color: var(--muted); white-space: nowrap; }
+  .legend .row .p { color: var(--faint); font-size: 12px; width: 38px; text-align: right; }
+
+  /* ---------- Cash flow bars ---------- */
+  .flow-card { display: flex; flex-direction: column; }
+  .bars { display: flex; align-items: flex-end; gap: 14px; flex: 1; min-height: 220px; padding-top: 10px; position: relative; }
+  .bars .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; height: 100%; cursor: default; }
+  .bars .pair { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 5px; position: relative; }
+  .bars .bar { width: min(22px, 38%); border-radius: 8px 8px 4px 4px; height: 0; transition: height 1s var(--ease); position: relative; }
+  .bars .bar.inc { background: linear-gradient(180deg, var(--income), rgba(94,234,212,.15)); box-shadow: 0 0 18px -4px var(--income); }
+  .bars .bar.exp { background: linear-gradient(180deg, var(--expense), rgba(251,113,133,.15)); box-shadow: 0 0 18px -4px var(--expense); }
+  .bars .m { font-size: 12px; color: var(--faint); }
+  .bars .col.current .m { color: var(--text); font-weight: 500; }
+  .bars .col:hover .tip { opacity: 1; transform: translate(-50%, -6px); }
+  .tip {
+    position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, 0); opacity: 0; pointer-events: none;
+    background: rgba(20,20,30,.85); backdrop-filter: blur(12px); border: 1px solid var(--stroke); border-radius: 12px;
+    padding: 8px 10px; font-size: 12px; white-space: nowrap; transition: all .25s var(--ease); z-index: 3;
+  }
+  .tip div { display: flex; gap: 10px; justify-content: space-between; }
+  .legend-inline { display: flex; gap: 14px; font-size: 12px; color: var(--muted); }
+  .legend-inline span { display: flex; align-items: center; gap: 6px; }
+  .legend-inline i { width: 8px; height: 8px; border-radius: 3px; }
+
+  /* ---------- Category spend ---------- */
+  .cats { display: flex; flex-direction: column; gap: 14px; }
+  .cat .line { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 7px; white-space: nowrap; }
+  .cat .line span:first-child { display: flex; align-items: center; gap: 8px; }
+  .cat .line .e { width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center; font-size: 13px; background: rgba(255,255,255,.06); }
+  .cat .line .muted { color: var(--muted); }
+  .cat .meter div { background: var(--c); }
+
+  /* ---------- Goals ---------- */
+  .goals { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .goal { padding: 16px; border-radius: 20px; background: rgba(255,255,255,.04); border: 1px solid var(--stroke); text-align: center; position: relative; transition: transform .3s var(--ease), background .2s; }
+  .goal:hover { transform: translateY(-3px); background: rgba(255,255,255,.07); }
+  .goal .gr { width: 92px; height: 92px; margin: 0 auto 10px; position: relative; }
+  .goal .gr svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .goal .gr .gp { position: absolute; inset: 0; display: grid; place-items: center; font-size: 18px; font-weight: 500; letter-spacing: -.03em; }
+  .goal .gn { font-weight: 500; font-size: 14px; }
+  .goal .ga { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .goal .gact { display: flex; gap: 6px; justify-content: center; margin-top: 12px; }
+  .goal .gact button { font-size: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid var(--stroke); }
+  .goal .gact button:hover { background: rgba(255,255,255,.14); }
+  .goal .gdel { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity .2s; width: 26px; height: 26px; }
+  .goal:hover .gdel { opacity: 1; }
+  .goal.add { display: grid; place-content: center; gap: 8px; color: var(--muted); border-style: dashed; min-height: 200px; }
+  .goal.add .plus { width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.06); font-size: 22px; }
+
+  /* ---------- Transactions ---------- */
+  .tx-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--stroke); position: relative; }
+  .seg button { position: relative; z-index: 1; font-size: 12px; padding: 6px 12px; border-radius: 999px; color: var(--muted); transition: color .2s; }
+  .seg button.on { color: #0b0b12; }
+  .seg .pill { position: absolute; top: 3px; bottom: 3px; border-radius: 999px; background: #fff; transition: left .35s var(--ease), width .35s var(--ease); }
+  .search { display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 34px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--stroke); }
+  .search input { background: none; border: 0; outline: 0; width: 140px; font-size: 13px; }
+  .search svg { width: 14px; height: 14px; color: var(--faint); }
+  .tx-list { max-height: 520px; overflow-y: auto; margin: 0 -8px; padding: 0 8px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent; }
+  .tx-day { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; margin: 16px 0 6px; display: flex; justify-content: space-between; }
+  .tx-day:first-child { margin-top: 0; }
+  .tx {
+    display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; cursor: pointer;
+    transition: background .2s; animation: rise .5s var(--ease) both;
+  }
+  .tx:hover { background: rgba(255,255,255,.06); }
+  .tx .e { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; font-size: 18px; flex: none; background: color-mix(in srgb, var(--c) 18%, transparent); border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); }
+  .tx .info { flex: 1; min-width: 0; }
+  .tx .t { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx .s { font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .tx .a { font-weight: 500; font-size: 14px; letter-spacing: -.01em; }
+  .tx .a.inc { color: var(--income); }
+  .tx .del { opacity: 0; width: 28px; height: 28px; }
+  .tx:hover .del { opacity: 1; }
+  .empty { text-align: center; padding: 40px 10px; color: var(--faint); font-size: 14px; }
+  .empty .serif { font-size: 28px; color: var(--muted); display: block; margin-bottom: 4px; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- Modal ---------- */
+  .scrim {
+    position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
+    background: rgba(5,5,10,.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none; transition: opacity .3s;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .modal {
+    width: min(460px, 100%); padding: 26px; max-height: calc(100vh - 32px); overflow-y: auto;
+    background: linear-gradient(155deg, rgba(40,40,60,.75), rgba(20,20,32,.7));
+    transform: translateY(20px) scale(.97); transition: transform .4s var(--ease);
+  }
+  .scrim.open .modal { transform: none; }
+  .modal h3 { font-family: "Instrument Serif", serif; font-weight: 400; font-size: 32px; letter-spacing: -.01em; margin-bottom: 18px; }
+  .modal h3 em { color: var(--accent); }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 7px; }
+  .input {
+    width: 100%; height: 44px; padding: 0 14px; border-radius: 14px; background: rgba(255,255,255,.06);
+    border: 1px solid var(--stroke); outline: 0; transition: border-color .2s, box-shadow .2s; font-size: 14px;
+  }
+  .input:focus { border-color: rgba(167,139,250,.7); box-shadow: 0 0 0 4px rgba(167,139,250,.15); }
+  select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+  select.input option { background: #16161f; }
+  .amount-in { display: flex; align-items: center; gap: 4px; padding: 6px 4px 14px; border-bottom: 1px solid var(--stroke); margin-bottom: 18px; }
+  .amount-in .cur { font-size: 34px; color: var(--faint); }
+  .amount-in input { background: none; border: 0; outline: 0; font-size: 48px; font-weight: 500; letter-spacing: -.04em; width: 100%; }
+  .amount-in input::-webkit-outer-spin-button, .amount-in input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .amount-in input { -moz-appearance: textfield; }
+  .amount-in input::placeholder { color: rgba(255,255,255,.2); }
+  .cat-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cat-grid button { font-size: 13px; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--stroke); color: var(--muted); transition: all .2s; }
+  .cat-grid button:hover { color: var(--text); }
+  .cat-grid button.on { background: color-mix(in srgb, var(--c) 25%, transparent); border-color: var(--c); color: var(--text); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+  .modal .seg { width: 100%; margin-bottom: 18px; }
+  .modal .seg button { flex: 1; font-size: 13px; padding: 9px; }
+  .settings-list { display: flex; flex-direction: column; gap: 8px; }
+  .settings-list .btn { justify-content: flex-start; width: 100%; height: 44px; border-radius: 14px; }
+  .danger { color: var(--expense); }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; z-index: 60; transform: translate(-50%, 30px); opacity: 0;
+    padding: 12px 18px; border-radius: 999px; font-size: 14px; transition: all .4s var(--ease); pointer-events: none;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+  /* entrance */
+  .reveal { opacity: 0; transform: translateY(18px); animation: rise .9s var(--ease) forwards; }
+  footer { text-align: center; color: var(--faint); font-size: 12px; margin-top: 40px; }
+
+  .fab { display: none; }
+  @media (max-width: 720px) {
+    .wrap { padding: 12px 16px 96px; }
+    nav.top { top: 8px; padding-left: 14px; }
+    .month-switch span { min-width: 92px; font-size: 13px; }
+    .nav-add, .logo-text { display: none; }
+    .fab { display: grid; position: fixed; right: 18px; bottom: 18px; z-index: 30; width: 58px; height: 58px; border-radius: 50%; padding: 0; place-items: center; }
+    .fab svg { width: 22px; height: 22px; }
+    .search input { width: 100px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div></div>
+<div class="gridlines"></div>
+<div class="grain"></div>
+
+<div class="wrap">
+  <nav class="top glass">
+    <div class="logo"><div class="logo-mark"></div><span class="logo-text">Lumen</span></div>
+    <div class="spacer"></div>
+    <div class="month-switch">
+      <button class="icon-btn" id="prevM" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+      <span id="monthLabel">—</span>
+      <button class="icon-btn" id="nextM" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+    <button class="icon-btn" id="openSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <button class="btn btn-primary nav-add" data-add><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Add entry <kbd>N</kbd></button>
+  </nav>
+
+  <main class="grid">
+    <!-- Hero -->
+    <section class="glass hero span-8 reveal" style="animation-delay:.05s">
+      <div class="hero-orb"></div>
+      <span class="eyebrow"><b id="dayBadge">Day 1</b><span id="daysLeft">of the month</span></span>
+      <h1 class="serif" id="headline">Your money, <em>in focus.</em></h1>
+      <p class="sub" id="subline">Every dollar gets a job. Track what comes in, decide where it goes.</p>
+      <div class="balance">
+        <div>
+          <div class="label">Left to spend this month</div>
+          <div class="big" id="balanceBig">$0</div>
+        </div>
+        <span class="delta up" id="balanceDelta">—</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k"><i style="background:var(--income);box-shadow:0 0 8px var(--income)"></i>Income</div><div class="v" id="statIncome">$0</div></div>
+        <div class="stat"><div class="k"><i style="background:var(--expense);box-shadow:0 0 8px var(--expense)"></i>Spent</div><div class="v" id="statExpense">$0</div></div>
+        <div class="stat"><div class="k"><i style="background:var(--accent);box-shadow:0 0 8px var(--accent)"></i>Saved & invested</div><div class="v" id="statSaved">$0</div></div>
+      </div>
+    </section>
+
+    <!-- Savings rate ring -->
+    <section class="glass card span-4 ring-card reveal" style="animation-delay:.12s">
+      <div class="card-head"><div class="card-title"><span class="dot"></span>Savings rate</div></div>
+      <div class="ring-wrap">
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#5eead4"/><stop offset="50%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="10"/>
+          <circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="url(#ringGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 314.16" style="transition:stroke-dasharray 1.4s var(--ease);filter:drop-shadow(0 0 8px rgba(96,165,250,.6))"/>
+        </svg>
+        <div class="ring-center"><div class="pct"><span id="ratePct">0</span><small>%</small></div><div class="cap">of income kept</div></div>
+      </div>
+      <div class="insights" id="insights"></div>
+    </section>
+
+    <!-- Income plan -->
+    <section class="glass card span-8 reveal" id="planCard" style="animation-delay:.18s">
+      <div class="card-head">
+        <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span>Income plan · give every dollar a job</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="plan-total" id="planTotal"></span>
+          <button class="btn btn-ghost" id="editPlan" style="height:32px;font-size:12px;padding:0 14px">Edit split</button>
+        </div>
+      </div>
+      <div class="presets" id="presets" style="margin-bottom:16px"></div>
+      <div class="alloc-bar" id="allocBar"></div>
+      <div class="buckets" id="buckets"></div>
+    </section>
+
+    <!-- Income sources -->
+    <section class="glass card span-4 reveal" style="animation-delay:.24s">
+      <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--accent-2);box-shadow:0 0 10px var(--accent-2)"></span>Where income comes from</div></div>
+      <div class="donut-row">
+        <div class="donut">
+          <svg viewBox="0 0 42 42" id="donutSvg"></svg>
+          <div class="center"><div class="v" id="donutV">$0</div><div class="k" id="donutK">total income</div></div>
+        </div>
+        <div class="legend" id="donutLegend"></div>
+      </div>
+    </section>
+
+    <!-- Cash flow -->
+    <section class="glass card span-7 reveal flow-card" style="animation-delay:.3s">
+      <div class="card-head">
+        <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span>Cash flow · last 6 months</div>
+        <div class="legend-inline"><span><i style="background:var(--income)"></i>Income</span><span><i style="background:var(--expense)"></i>Spent</span></div>
+      </div>
+      <div class="bars" id="bars"></div>
+    </section>
+
+    <!-- Category spend -->
+    <section class="glass card span-5 reveal" style="animation-delay:.36s">
+      <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--expense);box-shadow:0 0 10px var(--expense)"></span>Top spending</div></div>
+      <div class="cats" id="cats"></div>
+    </section>
+
+    <!-- Transactions -->
+    <section class="glass card span-7 reveal" style="animation-delay:.42s">
+      <div class="card-head" style="flex-wrap:wrap">
+        <div class="card-title"><span class="dot"></span>Activity</div>
+        <div class="tx-tools">
+          <div class="seg" id="txFilter"><span class="pill"></span><button data-f="all" class="on">All</button><button data-f="income">Income</button><button data-f="expense">Expenses</button></div>
+          <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="txSearch" placeholder="Search…" /></label>
+        </div>
+      </div>
+      <div class="tx-list" id="txList"></div>
+    </section>
+
+    <!-- Goals -->
+    <section class="glass card span-5 reveal" style="animation-delay:.48s">
+      <div class="card-head"><div class="card-title"><span class="dot" style="background:#f472b6;box-shadow:0 0 10px #f472b6"></span>Savings goals</div></div>
+      <div class="goals" id="goals"></div>
+    </section>
+  </main>
+
+  <footer>Lumen keeps everything in this browser — nothing leaves your device. Press <span class="mono">N</span> to add an entry.</footer>
+</div>
+
+<button class="btn btn-primary fab" data-add aria-label="Add entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<!-- Transaction modal -->
+<div class="scrim" id="txModal">
+  <form class="modal glass" id="txForm" autocomplete="off">
+    <h3 id="txModalTitle">New <em>entry</em></h3>
+    <div class="seg" id="typeSeg"><span class="pill"></span><button type="button" data-t="expense" class="on">Expense</button><button type="button" data-t="income">Income</button></div>
+    <div class="amount-in"><span class="cur" id="curSym">$</span><input id="fAmount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required /></div>
+    <div class="field"><label>Category</label><div class="cat-grid" id="catGrid"></div></div>
+    <div class="field"><label for="fNote">Description</label><input class="input" id="fNote" placeholder="e.g. Monthly rent, Client invoice…" /></div>
+    <div class="row2">
+      <div class="field"><label for="fDate">Date</label><input class="input" id="fDate" type="date" required /></div>
+      <div class="field" id="goalField" style="display:none"><label for="fGoal">Put toward goal</label><select class="input" id="fGoal"></select></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost danger" id="txDelete" style="margin-right:auto;display:none">Delete</button>
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+  </form>
+</div>
+
+<!-- Goal modal -->
+<div class="scrim" id="goalModal">
+  <form class="modal glass" id="goalForm" autocomplete="off">
+    <h3 id="goalModalTitle">New <em>goal</em></h3>
+    <div class="field"><label for="gName">Name</label><input class="input" id="gName" placeholder="Emergency fund, Japan trip…" required /></div>
+    <div class="row2">
+      <div class="field"><label for="gTarget">Target</label><input class="input" id="gTarget" type="number" min="1" step="0.01" required /></div>
+      <div class="field"><label for="gSaved">Already saved</label><input class="input" id="gSaved" type="number" min="0" step="0.01" value="0" /></div>
+    </div>
+    <div class="field"><label>Color</label><div class="cat-grid" id="gColors"></div></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save goal</button>
+    </div>
+  </form>
+</div>
+
+<!-- Fund goal modal -->
+<div class="scrim" id="fundModal">
+  <form class="modal glass" id="fundForm" autocomplete="off">
+    <h3>Add to <em id="fundName">goal</em></h3>
+    <div class="amount-in"><span class="cur cur-sym">$</span><input id="fundAmount" type="number" step="0.01" min="0.01" placeholder="0.00" required /></div>
+    <p style="font-size:13px;color:var(--muted)">This also logs a <b style="color:var(--text);font-weight:500">Savings</b> entry for the month, so it counts toward your Future bucket.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Add funds</button>
+    </div>
+  </form>
+</div>
+
+<!-- Settings modal -->
+<div class="scrim" id="settingsModal">
+  <div class="modal glass">
+    <h3>Settings</h3>
+    <div class="field"><label for="sCurrency">Currency</label>
+      <select class="input" id="sCurrency">
+        <option value="USD">USD — US Dollar</option><option value="EUR">EUR — Euro</option><option value="GBP">GBP — British Pound</option>
+        <option value="BRL">BRL — Brazilian Real</option><option value="CAD">CAD — Canadian Dollar</option><option value="AUD">AUD — Australian Dollar</option>
+        <option value="JPY">JPY — Japanese Yen</option><option value="CHF">CHF — Swiss Franc</option><option value="MXN">MXN — Mexican Peso</option><option value="INR">INR — Indian Rupee</option>
+      </select>
+    </div>
+    <div class="settings-list">
+      <button class="btn btn-ghost" id="exportJson">⤓ &nbsp;Export backup (JSON)</button>
+      <button class="btn btn-ghost" id="exportCsv">⤓ &nbsp;Export transactions (CSV)</button>
+      <button class="btn btn-ghost" id="importJson">⤒ &nbsp;Import backup</button>
+      <button class="btn btn-ghost" id="loadDemo">✦ &nbsp;Load demo data</button>
+      <button class="btn btn-ghost danger" id="clearAll">✕ &nbsp;Start fresh (erase everything)</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" hidden />
+    <div class="modal-actions"><button class="btn btn-primary" data-close>Done</button></div>
+  </div>
+</div>
+
+<div class="toast glass" id="toast"></div>
+
+<script>
+(() => {
+  /* ================= Config ================= */
+  const CATS = {
+    income: [
+      { id: 'salary', name: 'Salary', e: '💼', c: '#5eead4' },
+      { id: 'freelance', name: 'Freelance', e: '🎨', c: '#60a5fa' },
+      { id: 'business', name: 'Side business', e: '🚀', c: '#a78bfa' },
+      { id: 'invest', name: 'Dividends', e: '📈', c: '#f472b6' },
+      { id: 'gift', name: 'Gifts', e: '🎁', c: '#fbbf24' },
+      { id: 'other_in', name: 'Other', e: '✨', c: '#94a3b8' },
+    ],
+    expense: [
+      { id: 'housing', name: 'Housing', e: '🏠', c: '#60a5fa', b: 'needs' },
+      { id: 'groceries', name: 'Groceries', e: '🥑', c: '#34d399', b: 'needs' },
+      { id: 'utilities', name: 'Utilities', e: '💡', c: '#fbbf24', b: 'needs' },
+      { id: 'transport', name: 'Transport', e: '🚇', c: '#38bdf8', b: 'needs' },
+      { id: 'health', name: 'Health', e: '🩺', c: '#5eead4', b: 'needs' },
+      { id: 'dining', name: 'Dining out', e: '🍜', c: '#fb923c', b: 'wants' },
+      { id: 'shopping', name: 'Shopping', e: '🛍️', c: '#f472b6', b: 'wants' },
+      { id: 'fun', name: 'Entertainment', e: '🎬', c: '#c084fc', b: 'wants' },
+      { id: 'travel', name: 'Travel', e: '✈️', c: '#22d3ee', b: 'wants' },
+      { id: 'subs', name: 'Subscriptions', e: '📺', c: '#e879f9', b: 'wants' },
+      { id: 'savings', name: 'Savings', e: '🏦', c: '#a78bfa', b: 'future' },
+      { id: 'investing', name: 'Investing', e: '🌱', c: '#4ade80', b: 'future' },
+      { id: 'debt', name: 'Debt payoff', e: '🔓', c: '#fb7185', b: 'future' },
+    ],
+  };
+  const BUCKETS = [
+    { id: 'needs', name: 'Needs', desc: 'Rent, bills, groceries, transport', c: '#60a5fa' },
+    { id: 'wants', name: 'Wants', desc: 'Dining, fun, shopping, travel', c: '#f472b6' },
+    { id: 'future', name: 'Future you', desc: 'Savings, investing, debt payoff', c: '#5eead4' },
+  ];
+  const PRESETS = [
+    { name: '50 / 30 / 20', v: [50, 30, 20] },
+    { name: '60 / 20 / 20', v: [60, 20, 20] },
+    { name: '70 / 20 / 10', v: [70, 20, 10] },
+    { name: '50 / 20 / 30 · Aggressive saver', v: [50, 20, 30] },
+  ];
+  const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
+  const KEY = 'lumen-budget-v1';
+  const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
+
+  /* ================= State ================= */
+  let state;
+  let view = monthKey(new Date());
+  let txFilter = 'all', txQuery = '', editingPlan = false;
+  const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+
+  function monthKey(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+  function shiftMonth(key, n) { const [y, m] = key.split('-').map(Number); return monthKey(new Date(y, m - 1 + n, 1)); }
+  function isoDate(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+
+  function load() {
+    try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+    return demoState();
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  function demoState() {
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const r = (a, b) => Math.round((a + rnd() * (b - a)) * 100) / 100;
+    const txns = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const y = now.getFullYear(), m = now.getMonth() - i;
+      const lastDay = i === 0 ? now.getDate() : new Date(y, m + 1, 0).getDate();
+      const d = day => isoDate(new Date(y, m, Math.min(day, lastDay)));
+      const add = (type, category, amount, day, note) => { if (day <= lastDay) txns.push({ id: uid(), type, category, amount, date: d(day), note }); };
+      add('income', 'salary', 4200, 1, 'Monthly paycheck');
+      add('income', 'freelance', r(400, 1500), 12, 'Client invoice');
+      if (rnd() > .4) add('income', 'business', r(120, 480), 20, 'Etsy shop payout');
+      if (rnd() > .5) add('income', 'invest', r(40, 140), 15, 'Quarterly dividends');
+      add('expense', 'housing', 1450, 1, 'Rent');
+      add('expense', 'utilities', r(90, 160), 5, 'Electricity & internet');
+      add('expense', 'subs', 32.97, 3, 'Spotify, Netflix, iCloud');
+      add('expense', 'transport', r(70, 130), 2, 'Transit pass');
+      add('expense', 'savings', 400, 2, 'Auto-transfer to savings');
+      add('expense', 'investing', 300, 2, 'Index fund');
+      for (let w = 0; w < 4; w++) add('expense', 'groceries', r(55, 120), 4 + w * 7, ['Farmers market', 'Whole Foods', 'Trader Joe\'s', 'Corner store'][w]);
+      for (let k = 0; k < 4; k++) add('expense', 'dining', r(18, 70), 6 + k * 6, ['Ramen night', 'Brunch', 'Coffee & pastries', 'Tacos with friends'][k]);
+      add('expense', 'shopping', r(40, 220), 17, ['New sneakers', 'Books', 'Home decor', 'Jacket', 'Plants', 'Gadget'][Math.floor(rnd() * 6)]);
+      add('expense', 'fun', r(20, 90), 22, ['Concert tickets', 'Cinema', 'Climbing gym', 'Museum'][Math.floor(rnd() * 4)]);
+      if (rnd() > .6) add('expense', 'travel', r(180, 600), 25, 'Weekend getaway');
+      if (rnd() > .5) add('expense', 'health', r(25, 90), 10, 'Pharmacy');
+    }
+    return {
+      currency: 'USD',
+      split: [50, 30, 20],
+      txns,
+      goals: [
+        { id: uid(), name: 'Emergency fund', target: 10000, saved: 6400, c: '#5eead4' },
+        { id: uid(), name: 'Japan trip', target: 3500, saved: 1180, c: '#f472b6' },
+        { id: uid(), name: 'New laptop', target: 2200, saved: 1650, c: '#a78bfa' },
+      ],
+    };
+  }
+
+  /* ================= Formatting ================= */
+  const fmt = (n, opts = {}) => {
+    const cur = state.currency;
+    const noDec = cur === 'JPY' || opts.compact;
+    try {
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur, maximumFractionDigits: noDec ? 0 : 2, minimumFractionDigits: noDec ? 0 : 2, notation: opts.compact && Math.abs(n) >= 10000 ? 'compact' : 'standard' }).format(n);
+    } catch (e) { return cur + ' ' + n.toFixed(2); }
+  };
+  const curSymbol = () => {
+    try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: state.currency }).formatToParts(0).find(p => p.type === 'currency').value; } catch (e) { return '$'; }
+  };
+  const monthName = (key, style = 'long') => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: style, ...(style === 'long' ? { year: 'numeric' } : {}) }); };
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function animateNum(el, to, formatter) {
+    const from = parseFloat(el.dataset.v || '0');
+    el.dataset.v = to;
+    const start = performance.now(), dur = 900;
+    const step = t => {
+      const p = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - p, 4);
+      el.innerHTML = formatter(from + (to - from) * e);
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  const bigMoney = n => {
+    const s = fmt(n);
+    const m = s.match(/^(.*?)([.,]\d{2})(\D*)$/);
+    return m ? `${esc(m[1])}<span class="cents">${esc(m[2])}</span>${esc(m[3])}` : esc(s);
+  };
+
+  /* ================= Calculations ================= */
+  const inMonth = key => state.txns.filter(t => t.date.startsWith(key));
+  function summary(key) {
+    const list = inMonth(key);
+    const income = list.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
+    const exp = list.filter(t => t.type === 'expense');
+    const expense = exp.reduce((a, t) => a + t.amount, 0);
+    const byBucket = { needs: 0, wants: 0, future: 0 };
+    exp.forEach(t => { const c = CATS.expense.find(c => c.id === t.category); byBucket[c ? c.b : 'wants'] += t.amount; });
+    return { list, income, expense, byBucket, saved: byBucket.future, consumption: byBucket.needs + byBucket.wants };
+  }
+
+  /* ================= Render ================= */
+  function render() {
+    const s = summary(view);
+    const prev = summary(shiftMonth(view, -1));
+    const today = new Date();
+    const isCurrent = view === monthKey(today);
+    const [vy, vm] = view.split('-').map(Number);
+    const daysInMonth = new Date(vy, vm, 0).getDate();
+
+    document.getElementById('monthLabel').textContent = monthName(view);
+    document.querySelectorAll('#curSym, .cur-sym').forEach(el => el.textContent = curSymbol());
+
+    // Hero copy
+    const left = s.income - s.expense;
+    const hour = today.getHours();
+    const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    if (isCurrent) {
+      document.getElementById('dayBadge').textContent = `Day ${today.getDate()}`;
+      document.getElementById('daysLeft').textContent = `${daysInMonth - today.getDate()} days left in ${monthName(view, 'long').split(' ')[0]}`;
+    } else {
+      document.getElementById('dayBadge').textContent = view < monthKey(today) ? 'Closed' : 'Upcoming';
+      document.getElementById('daysLeft').textContent = view < monthKey(today) ? 'Looking back' : 'Planning ahead';
+    }
+    const headline = document.getElementById('headline');
+    const rate = s.income ? (s.saved + Math.max(0, left)) / s.income : 0;
+    if (!s.income && !s.expense) headline.innerHTML = `${greet}. <em>A blank page.</em>`;
+    else if (left < 0) headline.innerHTML = `${greet}. <em>Time to rebalance.</em>`;
+    else if (rate >= .3) headline.innerHTML = `${greet}. <em>You're thriving.</em>`;
+    else if (rate >= .15) headline.innerHTML = `${greet}. <em>Nicely balanced.</em>`;
+    else headline.innerHTML = `${greet}. <em>Every dollar counts.</em>`;
+    document.getElementById('subline').textContent = s.income
+      ? `You've brought in ${fmt(s.income)} and given ${Math.round(Math.min(1, s.expense / s.income) * 100)}% of it a job. ${left >= 0 ? 'The rest is breathing room.' : 'Spending has outpaced income — let’s look at where.'}`
+      : 'Add your first income to start planning. Every dollar gets a job.';
+
+    animateNum(document.getElementById('balanceBig'), left, bigMoney);
+    animateNum(document.getElementById('statIncome'), s.income, n => esc(fmt(n)));
+    animateNum(document.getElementById('statExpense'), s.consumption, n => esc(fmt(n)));
+    animateNum(document.getElementById('statSaved'), s.saved, n => esc(fmt(n)));
+    const delta = document.getElementById('balanceDelta');
+    const prevLeft = prev.income - prev.expense;
+    if (prev.income || prev.expense) {
+      const diff = left - prevLeft;
+      delta.className = 'delta ' + (diff >= 0 ? 'up' : 'down');
+      delta.textContent = `${diff >= 0 ? '↑' : '↓'} ${fmt(Math.abs(diff))} vs ${monthName(shiftMonth(view, -1), 'short')}`;
+      delta.style.display = '';
+    } else delta.style.display = 'none';
+
+    // Ring
+    const ratePct = Math.max(0, Math.round(rate * 100));
+    const C = 2 * Math.PI * 50;
+    document.getElementById('ringArc').setAttribute('stroke-dasharray', `${C * Math.min(1, ratePct / 100)} ${C}`);
+    animateNum(document.getElementById('ratePct'), ratePct, n => Math.round(n));
+
+    renderInsights(s, prev, isCurrent, daysInMonth, today);
+    renderPlan(s);
+    renderDonut(s);
+    renderBars();
+    renderCats(s);
+    renderTx();
+    renderGoals();
+  }
+
+  function renderInsights(s, prev, isCurrent, dim, today) {
+    const out = [];
+    const split = state.split;
+    BUCKETS.forEach((b, i) => {
+      if (b.id === 'future' || !s.income) return;
+      const budget = s.income * split[i] / 100, used = s.byBucket[b.id];
+      if (used > budget) out.push({ ic: '⚠️', bg: 'rgba(251,191,36,.15)', t: `<b>${b.name}</b> is ${fmt(used - budget)} over its ${split[i]}% slice.` });
+      else if (isCurrent && used / budget > .8) out.push({ ic: '⏳', bg: 'rgba(251,191,36,.15)', t: `<b>${Math.round(used / budget * 100)}%</b> of ${b.name} used with ${dim - today.getDate()} days to go.` });
+    });
+    const futureTarget = s.income * split[2] / 100;
+    if (s.income && s.saved >= futureTarget) out.push({ ic: '🌱', bg: 'rgba(94,234,212,.15)', t: `Future-you goal hit: <b>${fmt(s.saved)}</b> saved & invested.` });
+    const exp = s.list.filter(t => t.type === 'expense' && CATS.expense.find(c => c.id === t.category)?.b !== 'future');
+    const byCat = {}; exp.forEach(t => byCat[t.category] = (byCat[t.category] || 0) + t.amount);
+    const prevByCat = {}; prev.list.filter(t => t.type === 'expense').forEach(t => prevByCat[t.category] = (prevByCat[t.category] || 0) + t.amount);
+    let best = null;
+    Object.keys(byCat).forEach(k => { if (prevByCat[k] && k !== 'housing') { const d = byCat[k] - prevByCat[k]; if (!best || Math.abs(d) > Math.abs(best.d)) best = { k, d }; } });
+    if (best && Math.abs(best.d) > 15) out.push({ ic: best.d > 0 ? '📈' : '📉', bg: best.d > 0 ? 'rgba(251,113,133,.15)' : 'rgba(94,234,212,.15)', t: `${catById(best.k).name} is <b>${best.d > 0 ? 'up' : 'down'} ${fmt(Math.abs(best.d))}</b> from last month.` });
+    if (isCurrent && s.income > s.expense) {
+      const perDay = (s.income - s.expense) / Math.max(1, dim - today.getDate() + 1);
+      out.push({ ic: '☀️', bg: 'rgba(167,139,250,.18)', t: `You can spend about <b>${fmt(perDay)}/day</b> for the rest of the month.` });
+    }
+    if (!out.length) out.push({ ic: '✨', bg: 'rgba(167,139,250,.18)', t: s.income ? 'Everything is on track. Nice work.' : 'Log your income to unlock insights.' });
+    document.getElementById('insights').innerHTML = out.slice(0, 3).map(o => `<div class="insight"><span class="ic" style="background:${o.bg}">${o.ic}</span><span>${o.t}</span></div>`).join('');
+  }
+
+  function renderPlan(s) {
+    const split = state.split;
+    const total = split.reduce((a, b) => a + b, 0);
+    const card = document.getElementById('planCard');
+    card.classList.toggle('editing', editingPlan);
+    document.getElementById('editPlan').textContent = editingPlan ? 'Done' : 'Edit split';
+    const pt = document.getElementById('planTotal');
+    pt.textContent = editingPlan ? `Total ${total}%` : '';
+    pt.classList.toggle('bad', total !== 100);
+
+    document.getElementById('presets').innerHTML = PRESETS.map((p, i) =>
+      `<button class="chip ${p.v.join() === split.join() ? 'active' : ''}" data-preset="${i}">${p.name}</button>`).join('');
+    document.getElementById('allocBar').innerHTML = BUCKETS.map((b, i) =>
+      `<div style="flex-basis:${split[i] / Math.max(total, 1) * 100}%;background:linear-gradient(90deg, ${b.c}, ${b.c}aa);box-shadow:0 0 14px ${b.c}88"></div>`).join('');
+
+    const bucketsEl = document.getElementById('buckets');
+    const existing = bucketsEl.querySelectorAll('.bucket');
+    const html = BUCKETS.map((b, i) => {
+      const budget = s.income * split[i] / 100, used = s.byBucket[b.id];
+      const pct = budget ? used / budget : (used ? 1.01 : 0);
+      const isFuture = b.id === 'future';
+      const over = !isFuture && used > budget && budget > 0;
+      const leftTxt = !s.income ? 'Add income to fund this bucket'
+        : isFuture ? (used >= budget ? `Goal met · ${fmt(used - budget)} extra` : `${fmt(budget - used)} still to set aside`)
+        : over ? `${fmt(used - budget)} over budget` : `${fmt(budget - used)} left to spend`;
+      return `<div class="bucket" style="--c:${b.c}">
+        <div class="top"><div class="name"><i></i>${b.name}</div><div class="pctl"><span data-pctl="${i}">${split[i]}</span>%</div></div>
+        <div class="desc">${b.desc}</div>
+        <div class="amt"><span>${isFuture ? 'Set aside' : 'Spent'} <b>${fmt(used)}</b></span><span>of ${fmt(budget)}</span></div>
+        <div class="meter ${over ? 'over' : ''}"><div data-w="${Math.min(100, pct * 100)}"></div></div>
+        <div class="left" style="${over ? 'color:var(--expense)' : ''}">${leftTxt}</div>
+        <input type="range" min="0" max="100" step="5" value="${split[i]}" data-slider="${i}" aria-label="${b.name} percent" />
+      </div>`;
+    }).join('');
+    bucketsEl.innerHTML = html;
+    requestAnimationFrame(() => requestAnimationFrame(() => bucketsEl.querySelectorAll('.meter div').forEach(d => d.style.width = d.dataset.w + '%')));
+  }
+
+  function renderDonut(s) {
+    const inc = s.list.filter(t => t.type === 'income');
+    const by = {}; inc.forEach(t => by[t.category] = (by[t.category] || 0) + t.amount);
+    const entries = Object.entries(by).sort((a, b) => b[1] - a[1]);
+    const total = s.income;
+    const svg = document.getElementById('donutSvg');
+    let acc = 0;
+    const gap = entries.length > 1 ? 1.2 : 0;
+    const r = 15.915;
+    let segs = `<circle cx="21" cy="21" r="${r}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="4"/>`;
+    entries.forEach(([k, v]) => {
+      const c = catById(k), p = v / total * 100;
+      segs += `<circle class="seg" data-k="${k}" cx="21" cy="21" r="${r}" fill="none" stroke="${c.c}" stroke-width="4" stroke-linecap="round"
+        stroke-dasharray="${Math.max(0.1, p - gap)} ${100 - Math.max(0.1, p - gap)}" stroke-dashoffset="${-acc}" style="filter:drop-shadow(0 0 1.5px ${c.c})"/>`;
+      acc += p;
+    });
+    svg.innerHTML = segs;
+    const setCenter = (v, k) => { document.getElementById('donutV').textContent = v; document.getElementById('donutK').textContent = k; };
+    setCenter(fmt(total, { compact: true }), entries.length ? `from ${entries.length} source${entries.length > 1 ? 's' : ''}` : 'no income yet');
+    svg.querySelectorAll('.seg').forEach(el => {
+      el.addEventListener('mouseenter', () => setCenter(fmt(by[el.dataset.k], { compact: true }), catById(el.dataset.k).name));
+      el.addEventListener('mouseleave', () => setCenter(fmt(total, { compact: true }), `from ${entries.length} source${entries.length > 1 ? 's' : ''}`));
+    });
+    document.getElementById('donutLegend').innerHTML = entries.length ? entries.map(([k, v]) => {
+      const c = catById(k);
+      return `<div class="row"><i style="background:${c.c};box-shadow:0 0 8px ${c.c}"></i><span>${c.e} ${c.name}</span><span>${fmt(v)}</span><span class="p">${Math.round(v / total * 100)}%</span></div>`;
+    }).join('') : `<div class="empty" style="padding:10px"><span class="serif">Nothing yet</span>Add an income entry.</div>`;
+  }
+
+  function renderBars() {
+    const months = Array.from({ length: 6 }, (_, i) => shiftMonth(view, i - 5));
+    const data = months.map(m => { const s = summary(m); return { m, inc: s.income, exp: s.expense }; });
+    const max = Math.max(1, ...data.flatMap(d => [d.inc, d.exp]));
+    const el = document.getElementById('bars');
+    el.innerHTML = data.map(d => `<div class="col ${d.m === view ? 'current' : ''}">
+      <div class="pair">
+        <div class="tip"><b>${monthName(d.m)}</b><div><span style="color:var(--income)">In</span><span>${fmt(d.inc)}</span></div><div><span style="color:var(--expense)">Out</span><span>${fmt(d.exp)}</span></div><div><span style="color:var(--muted)">Net</span><span>${fmt(d.inc - d.exp)}</span></div></div>
+        <div class="bar inc" data-h="${d.inc / max * 100}"></div><div class="bar exp" data-h="${d.exp / max * 100}"></div>
+      </div>
+      <div class="m">${monthName(d.m, 'short')}</div></div>`).join('');
+    requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll('.bar').forEach((b, i) => { b.style.transitionDelay = (i * 40) + 'ms'; b.style.height = b.dataset.h + '%'; })));
+  }
+
+  function renderCats(s) {
+    const by = {};
+    s.list.filter(t => t.type === 'expense').forEach(t => by[t.category] = (by[t.category] || 0) + t.amount);
+    const entries = Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const max = entries[0]?.[1] || 1;
+    const el = document.getElementById('cats');
+    el.innerHTML = entries.length ? entries.map(([k, v]) => {
+      const c = catById(k);
+      return `<div class="cat" style="--c:${c.c}"><div class="line"><span><span class="e">${c.e}</span>${c.name}</span><span>${fmt(v)} <span class="muted">· ${s.expense ? Math.round(v / s.expense * 100) : 0}%</span></span></div>
+        <div class="meter"><div data-w="${v / max * 100}"></div></div></div>`;
+    }).join('') : `<div class="empty"><span class="serif">All quiet</span>No spending logged this month.</div>`;
+    requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll('.meter div').forEach(d => d.style.width = d.dataset.w + '%')));
+  }
+
+  function renderTx() {
+    let list = inMonth(view).slice().sort((a, b) => b.date.localeCompare(a.date) || (a.type === 'income' ? -1 : 1));
+    if (txFilter !== 'all') list = list.filter(t => t.type === txFilter);
+    if (txQuery) { const q = txQuery.toLowerCase(); list = list.filter(t => (t.note || '').toLowerCase().includes(q) || catById(t.category).name.toLowerCase().includes(q)); }
+    const el = document.getElementById('txList');
+    if (!list.length) { el.innerHTML = `<div class="empty"><span class="serif">Nothing here</span>${txQuery ? 'No matches for your search.' : 'Press N or tap “Add entry” to log something.'}</div>`; return; }
+    const groups = {};
+    list.forEach(t => (groups[t.date] = groups[t.date] || []).push(t));
+    let i = 0;
+    el.innerHTML = Object.entries(groups).map(([date, items]) => {
+      const d = new Date(date + 'T00:00');
+      const net = items.reduce((a, t) => a + (t.type === 'income' ? t.amount : -t.amount), 0);
+      return `<div class="tx-day"><span>${d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><span>${net >= 0 ? '+' : '−'}${fmt(Math.abs(net))}</span></div>` +
+        items.map(t => {
+          const c = catById(t.category);
+          return `<div class="tx" data-id="${t.id}" style="--c:${c.c};animation-delay:${Math.min(i++, 14) * 25}ms">
+            <div class="e">${c.e}</div>
+            <div class="info"><div class="t">${esc(t.note || c.name)}</div><div class="s">${c.name}${t.type === 'expense' ? ' · ' + (BUCKETS.find(b => b.id === c.b)?.name || '') : ''}</div></div>
+            <div class="a ${t.type === 'income' ? 'inc' : ''}">${t.type === 'income' ? '+' : '−'}${fmt(t.amount)}</div>
+            <button class="icon-btn del" data-del="${t.id}" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>`;
+        }).join('');
+    }).join('');
+  }
+
+  function renderGoals() {
+    const el = document.getElementById('goals');
+    const C = 2 * Math.PI * 40;
+    el.innerHTML = state.goals.map(g => {
+      const p = Math.min(1, g.saved / g.target);
+      return `<div class="goal" data-gid="${g.id}">
+        <button class="icon-btn gdel" data-gdel="${g.id}" aria-label="Delete goal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        <div class="gr"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="9"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="${g.c}" stroke-width="9" stroke-linecap="round" stroke-dasharray="0 ${C}" data-dash="${C * p} ${C}" style="transition:stroke-dasharray 1.2s var(--ease);filter:drop-shadow(0 0 6px ${g.c})"/></svg>
+          <div class="gp">${p >= 1 ? '🎉' : Math.round(p * 100) + '%'}</div></div>
+        <div class="gn">${esc(g.name)}</div>
+        <div class="ga">${fmt(g.saved, { compact: true })} of ${fmt(g.target, { compact: true })}</div>
+        <div class="gact"><button data-fund="${g.id}">+ Add</button><button data-gedit="${g.id}">Edit</button></div>
+      </div>`;
+    }).join('') + `<button class="goal add" id="addGoal"><span class="plus">+</span><span>New goal</span></button>`;
+    requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll('[data-dash]').forEach(c => c.setAttribute('stroke-dasharray', c.dataset.dash))));
+  }
+
+  /* ================= Modals ================= */
+  const open = id => { document.getElementById(id).classList.add('open'); };
+  const close = el => el.closest('.scrim').classList.remove('open');
+  document.querySelectorAll('.scrim').forEach(s => {
+    s.addEventListener('mousedown', e => { if (e.target === s) s.classList.remove('open'); });
+    s.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => close(b)));
+  });
+
+  function setSeg(seg, value, attr) {
+    const btns = [...seg.querySelectorAll('button')];
+    btns.forEach(b => b.classList.toggle('on', b.dataset[attr] === value));
+    const on = btns.find(b => b.dataset[attr] === value), pill = seg.querySelector('.pill');
+    if (on && pill) { pill.style.left = on.offsetLeft + 'px'; pill.style.width = on.offsetWidth + 'px'; }
+  }
+
+  // Transaction modal
+  let txType = 'expense', txCat = null, editingTx = null;
+  function renderCatGrid() {
+    const cats = CATS[txType];
+    if (!cats.find(c => c.id === txCat)) txCat = cats[0].id;
+    document.getElementById('catGrid').innerHTML = cats.map(c => `<button type="button" style="--c:${c.c}" class="${c.id === txCat ? 'on' : ''}" data-cat="${c.id}">${c.e} ${c.name}</button>`).join('');
+    const showGoal = txType === 'expense' && txCat === 'savings' && state.goals.length;
+    document.getElementById('goalField').style.display = showGoal ? '' : 'none';
+    document.getElementById('fGoal').innerHTML = `<option value="">— None —</option>` + state.goals.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
+  }
+  function openTx(t) {
+    editingTx = t || null;
+    txType = t ? t.type : 'expense';
+    txCat = t ? t.category : null;
+    document.getElementById('txModalTitle').innerHTML = t ? 'Edit <em>entry</em>' : 'New <em>entry</em>';
+    document.getElementById('fAmount').value = t ? t.amount : '';
+    document.getElementById('fNote').value = t ? (t.note || '') : '';
+    const today = new Date();
+    const def = view === monthKey(today) ? isoDate(today) : view + '-01';
+    document.getElementById('fDate').value = t ? t.date : def;
+    document.getElementById('txDelete').style.display = t ? '' : 'none';
+    open('txModal');
+    setSeg(document.getElementById('typeSeg'), txType, 't');
+    renderCatGrid();
+    setTimeout(() => document.getElementById('fAmount').focus(), 80);
+  }
+  document.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => openTx()));
+  document.getElementById('typeSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    txType = b.dataset.t; setSeg(e.currentTarget, txType, 't'); renderCatGrid();
+  });
+  document.getElementById('catGrid').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    txCat = b.dataset.cat; renderCatGrid();
+  });
+  document.getElementById('txForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const amount = Math.round(parseFloat(document.getElementById('fAmount').value) * 100) / 100;
+    if (!(amount > 0)) return toast('Enter an amount above zero', '⚠️');
+    const data = { type: txType, category: txCat, amount, date: document.getElementById('fDate').value, note: document.getElementById('fNote').value.trim() };
+    if (editingTx) Object.assign(editingTx, data);
+    else {
+      state.txns.push({ id: uid(), ...data });
+      const gid = document.getElementById('fGoal').value;
+      if (txType === 'expense' && txCat === 'savings' && gid) { const g = state.goals.find(g => g.id === gid); if (g) g.saved += amount; }
+    }
+    const k = data.date.slice(0, 7);
+    if (k !== view) view = k;
+    save(); close(e.target); render();
+    toast(editingTx ? 'Entry updated' : (txType === 'income' ? `+${fmt(amount)} income logged` : `${fmt(amount)} expense logged`), txType === 'income' ? '💸' : '✓');
+  });
+  document.getElementById('txDelete').addEventListener('click', e => {
+    if (!editingTx) return;
+    removeTx(editingTx.id); close(e.target);
+  });
+  function removeTx(id) {
+    const idx = state.txns.findIndex(t => t.id === id);
+    if (idx < 0) return;
+    const [removed] = state.txns.splice(idx, 1);
+    save(); render();
+    toast('Entry deleted', '🗑️', () => { state.txns.push(removed); save(); render(); });
+  }
+  document.getElementById('txList').addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) { e.stopPropagation(); return removeTx(del.dataset.del); }
+    const row = e.target.closest('.tx'); if (row) openTx(state.txns.find(t => t.id === row.dataset.id));
+  });
+
+  // Filter + search
+  const filterSeg = document.getElementById('txFilter');
+  filterSeg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; txFilter = b.dataset.f; setSeg(filterSeg, txFilter, 'f'); renderTx(); });
+  document.getElementById('txSearch').addEventListener('input', e => { txQuery = e.target.value.trim(); renderTx(); });
+
+  // Plan
+  document.getElementById('editPlan').addEventListener('click', () => {
+    if (editingPlan && state.split.reduce((a, b) => a + b, 0) !== 100) return toast('Your split should add up to 100%', '⚠️');
+    editingPlan = !editingPlan; renderPlan(summary(view));
+  });
+  document.getElementById('presets').addEventListener('click', e => {
+    const b = e.target.closest('[data-preset]'); if (!b) return;
+    state.split = PRESETS[b.dataset.preset].v.slice(); save(); render();
+  });
+  document.getElementById('buckets').addEventListener('input', e => {
+    const i = e.target.dataset.slider; if (i === undefined) return;
+    state.split[i] = +e.target.value;
+    save();
+    // light update to keep the slider focused while dragging
+    document.querySelector(`[data-pctl="${i}"]`).textContent = state.split[i];
+    const total = state.split.reduce((a, b) => a + b, 0);
+    const pt = document.getElementById('planTotal'); pt.textContent = `Total ${total}%`; pt.classList.toggle('bad', total !== 100);
+    document.querySelectorAll('#allocBar div').forEach((d, j) => d.style.flexBasis = state.split[j] / Math.max(total, 1) * 100 + '%');
+  });
+  document.getElementById('buckets').addEventListener('change', () => render());
+
+  // Goals
+  let editingGoal = null, gColor = GOAL_COLORS[0], fundingGoal = null;
+  function renderGColors() {
+    document.getElementById('gColors').innerHTML = GOAL_COLORS.map(c => `<button type="button" style="--c:${c};width:34px;height:34px;padding:0;background:${c};${c === gColor ? 'box-shadow:0 0 0 2px #fff, 0 0 16px ' + c : ''}" data-gc="${c}" aria-label="Color"></button>`).join('');
+  }
+  function openGoal(g) {
+    editingGoal = g || null; gColor = g ? g.c : GOAL_COLORS[state.goals.length % GOAL_COLORS.length];
+    document.getElementById('goalModalTitle').innerHTML = g ? 'Edit <em>goal</em>' : 'New <em>goal</em>';
+    document.getElementById('gName').value = g ? g.name : '';
+    document.getElementById('gTarget').value = g ? g.target : '';
+    document.getElementById('gSaved').value = g ? g.saved : 0;
+    renderGColors(); open('goalModal');
+    setTimeout(() => document.getElementById('gName').focus(), 80);
+  }
+  document.getElementById('gColors').addEventListener('click', e => { const b = e.target.closest('[data-gc]'); if (b) { gColor = b.dataset.gc; renderGColors(); } });
+  document.getElementById('goalForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const data = { name: document.getElementById('gName').value.trim(), target: +document.getElementById('gTarget').value, saved: +document.getElementById('gSaved').value || 0, c: gColor };
+    if (!data.name || !(data.target > 0)) return;
+    if (editingGoal) Object.assign(editingGoal, data); else state.goals.push({ id: uid(), ...data });
+    save(); close(e.target); renderGoals(); toast(editingGoal ? 'Goal updated' : 'Goal created', '🎯');
+  });
+  document.getElementById('goals').addEventListener('click', e => {
+    if (e.target.closest('#addGoal')) return openGoal();
+    const ed = e.target.closest('[data-gedit]'); if (ed) return openGoal(state.goals.find(g => g.id === ed.dataset.gedit));
+    const del = e.target.closest('[data-gdel]');
+    if (del) {
+      const idx = state.goals.findIndex(g => g.id === del.dataset.gdel); const [g] = state.goals.splice(idx, 1);
+      save(); renderGoals(); return toast(`Removed “${g.name}”`, '🗑️', () => { state.goals.splice(idx, 0, g); save(); renderGoals(); });
+    }
+    const f = e.target.closest('[data-fund]');
+    if (f) {
+      fundingGoal = state.goals.find(g => g.id === f.dataset.fund);
+      document.getElementById('fundName').textContent = fundingGoal.name;
+      document.getElementById('fundAmount').value = '';
+      open('fundModal'); setTimeout(() => document.getElementById('fundAmount').focus(), 80);
+    }
+  });
+  document.getElementById('fundForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const amt = Math.round(parseFloat(document.getElementById('fundAmount').value) * 100) / 100;
+    if (!(amt > 0) || !fundingGoal) return;
+    const wasDone = fundingGoal.saved >= fundingGoal.target;
+    fundingGoal.saved += amt;
+    const today = new Date();
+    const [fy, fm] = view.split('-').map(Number);
+    const date = view === monthKey(today) ? isoDate(today) : isoDate(new Date(fy, fm, 0)); // last day of viewed month
+    state.txns.push({ id: uid(), type: 'expense', category: 'savings', amount: amt, date, note: `→ ${fundingGoal.name}` });
+    save(); close(e.target); render();
+    if (!wasDone && fundingGoal.saved >= fundingGoal.target) { toast(`“${fundingGoal.name}” fully funded!`, '🎉'); confetti(); }
+    else toast(`${fmt(amt)} added to ${fundingGoal.name}`, '🌱');
+  });
+
+  // Settings
+  document.getElementById('openSettings').addEventListener('click', () => { document.getElementById('sCurrency').value = state.currency; open('settingsModal'); });
+  document.getElementById('sCurrency').addEventListener('change', e => { state.currency = e.target.value; save(); render(); });
+  const download = (name, content, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+  document.getElementById('exportJson').addEventListener('click', () => { download(`lumen-backup-${isoDate(new Date())}.json`, JSON.stringify(state, null, 2), 'application/json'); toast('Backup downloaded', '⤓'); });
+  document.getElementById('exportCsv').addEventListener('click', () => {
+    const rows = [['date', 'type', 'category', 'amount', 'note']].concat(state.txns.slice().sort((a, b) => a.date.localeCompare(b.date)).map(t => [t.date, t.type, catById(t.category).name, t.amount, t.note || '']));
+    download(`lumen-transactions-${isoDate(new Date())}.csv`, rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n'), 'text/csv');
+    toast('CSV downloaded', '⤓');
+  });
+  document.getElementById('importJson').addEventListener('click', () => document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (!Array.isArray(data.txns)) throw 0;
+      state = { currency: data.currency || 'USD', split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [] };
+      save(); render(); toast('Backup restored', '✓');
+    } catch (err) { toast('That file doesn’t look like a Lumen backup', '⚠️'); }
+    e.target.value = '';
+  });
+  document.getElementById('loadDemo').addEventListener('click', e => {
+    if (!confirm('Replace your data with demo data?')) return;
+    state = demoState(); view = monthKey(new Date()); save(); render(); close(e.target); toast('Demo data loaded', '✦');
+  });
+  document.getElementById('clearAll').addEventListener('click', e => {
+    if (!confirm('Erase all entries and goals? This cannot be undone.')) return;
+    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [] }; view = monthKey(new Date()); save(); render(); close(e.target); toast('Fresh start', '✓');
+  });
+
+  // Month nav
+  document.getElementById('prevM').addEventListener('click', () => { view = shiftMonth(view, -1); render(); });
+  document.getElementById('nextM').addEventListener('click', () => { view = shiftMonth(view, 1); render(); });
+
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+    if (e.key === 'Escape') document.querySelectorAll('.scrim.open').forEach(s => s.classList.remove('open'));
+    if (typing || e.metaKey || e.ctrlKey || e.altKey || document.querySelector('.scrim.open')) return;
+    if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openTx(); }
+    if (e.key === 'ArrowLeft') { view = shiftMonth(view, -1); render(); }
+    if (e.key === 'ArrowRight') { view = shiftMonth(view, 1); render(); }
+  });
+
+  // Cursor spotlight on glass
+  document.addEventListener('pointermove', e => {
+    const el = e.target.closest && e.target.closest('.glass'); if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+    el.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  });
+
+  // Toast
+  let toastTimer;
+  function toast(msg, icon = '✓', undo) {
+    const t = document.getElementById('toast');
+    t.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>${undo ? '<button class="chip" id="undoBtn" style="pointer-events:auto">Undo</button>' : ''}`;
+    t.style.pointerEvents = undo ? 'auto' : 'none';
+    t.classList.add('show');
+    if (undo) document.getElementById('undoBtn').onclick = () => { undo(); t.classList.remove('show'); };
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), undo ? 4500 : 2400);
+  }
+
+  // Confetti
+  function confetti() {
+    const cv = document.createElement('canvas');
+    cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:70';
+    cv.width = innerWidth; cv.height = innerHeight; document.body.appendChild(cv);
+    const ctx = cv.getContext('2d');
+    const ps = Array.from({ length: 140 }, () => ({ x: innerWidth / 2, y: innerHeight / 2, vx: (Math.random() - .5) * 16, vy: Math.random() * -16 - 4, s: Math.random() * 6 + 3, c: GOAL_COLORS[Math.floor(Math.random() * GOAL_COLORS.length)], r: Math.random() * 6 }));
+    let f = 0;
+    (function tick() {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ps.forEach(p => { p.vy += .45; p.x += p.vx; p.y += p.vy; p.r += .1; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * .6); ctx.restore(); });
+      if (++f < 140) requestAnimationFrame(tick); else cv.remove();
+    })();
+  }
+
+  /* ================= Boot ================= */
+  state = load();
+  render();
+  requestAnimationFrame(() => setSeg(filterSeg, 'all', 'f'));
+  window.addEventListener('resize', () => setSeg(filterSeg, txFilter, 'f'));
+})();
+</script>
+</body>
+</html>
