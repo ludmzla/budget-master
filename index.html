@@ -323,6 +323,11 @@
   .bucket input[type=range] { width: 100%; margin-top: 14px; display: none; accent-color: var(--c); }
   .editing .bucket input[type=range] { display: block; }
   .plan-total { font-size: 12px; color: var(--muted); }
+  .plan-base { font-size: 13px; color: var(--muted); margin: -10px 0 16px; }
+  .plan-base b { color: var(--text); font-weight: 600; }
+  .alloc-bar .seg-overdue { background: repeating-linear-gradient(135deg, var(--expense) 0 6px, color-mix(in srgb, var(--expense) 60%, transparent) 6px 12px); box-shadow: 0 0 14px color-mix(in srgb, var(--expense) 50%, transparent); }
+  .bucket.overdue { grid-column: 1 / -1; border-color: color-mix(in srgb, var(--expense) 35%, transparent); background: color-mix(in srgb, var(--expense) 7%, transparent); }
+  .bucket.overdue .pctl { color: var(--expense); }
   .plan-total.bad { color: var(--warn); }
 
   /* ---------- Donut ---------- */
@@ -726,6 +731,7 @@
       </div>
       <div class="presets" id="presets" style="margin-bottom:16px"></div>
       <div class="alloc-bar" id="allocBar"></div>
+      <p class="plan-base" id="planBase" hidden></p>
       <div class="buckets" id="buckets"></div>
     </section>
 
@@ -1011,7 +1017,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.17';
+  const APP_VERSION = '1.18';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
@@ -1188,7 +1194,7 @@
     exp.forEach(t => { const c = CATS.expense.find(c => c.id === t.category); byBucket[c ? c.b : 'wants'] += t.amount; });
     const opening = openingBalance(key);
     const carry = state.overdraftCarry !== false && opening != null ? opening : 0;  // plus or minus from before the month started
-    return { list, income, expense, byBucket, saved: byBucket.future, consumption: byBucket.needs + byBucket.wants, opening, carry, left: income - expense + carry };
+    return { list, income, expense, byBucket, saved: byBucket.future, consumption: byBucket.needs + byBucket.wants, opening, carry, left: income - expense + carry, base: Math.max(0, income + carry) };
   }
 
   /* ================= Render ================= */
@@ -1273,11 +1279,11 @@
     const split = state.split;
     BUCKETS.forEach((b, i) => {
       if (b.id === 'future' || !s.income) return;
-      const budget = s.income * split[i] / 100, used = s.byBucket[b.id];
+      const budget = s.base * split[i] / 100, used = s.byBucket[b.id];
       if (used > budget) out.push({ ic: '⚠️', bg: 'rgba(251,191,36,.15)', t: `<b>${b.name}</b> is ${fmt(used - budget)} over its ${split[i]}% slice.` });
       else if (isCurrent && used / budget > .8) out.push({ ic: '⏳', bg: 'rgba(251,191,36,.15)', t: `<b>${Math.round(used / budget * 100)}%</b> of ${b.name} used with ${periodDaysLeft(view)} days to go.` });
     });
-    const futureTarget = s.income * split[2] / 100;
+    const futureTarget = s.base * split[2] / 100;
     if (s.income && s.saved >= futureTarget) out.push({ ic: '🌱', bg: 'rgba(94,234,212,.15)', t: `Future-you goal hit: <b>${fmt(s.saved)}</b> saved & invested.` });
     const exp = s.list.filter(t => t.type === 'expense' && CATS.expense.find(c => c.id === t.category)?.b !== 'future');
     const byCat = {}; exp.forEach(t => byCat[t.category] = (byCat[t.category] || 0) + t.amount);
@@ -1305,13 +1311,26 @@
 
     document.getElementById('presets').innerHTML = PRESETS.map((p, i) =>
       `<button class="chip ${p.v.join() === split.join() ? 'active' : ''}" data-preset="${i}">${p.name}</button>`).join('');
-    document.getElementById('allocBar').innerHTML = BUCKETS.map((b, i) =>
-      `<div style="flex-basis:${split[i] / Math.max(total, 1) * 100}%;background:linear-gradient(90deg, ${b.c}, ${b.c}aa);box-shadow:0 0 14px ${b.c}88"></div>`).join('');
+    // Money that already covered an overdraft is taken off the top before the split
+    const overdue = s.carry < 0 ? -s.carry : 0;
+    const whole = Math.max(1, s.base + overdue), share = s.base / whole;
+    document.getElementById('allocBar').innerHTML = (overdue ? `<div class="seg-overdue" style="flex-basis:${overdue / whole * 100}%"></div>` : '') + BUCKETS.map((b, i) =>
+      `<div data-seg="${i}" style="flex-basis:${split[i] / Math.max(total, 1) * share * 100}%;background:linear-gradient(90deg, ${b.c}, ${b.c}aa);box-shadow:0 0 14px ${b.c}88"></div>`).join('');
+    const pb = document.getElementById('planBase');
+    pb.hidden = !s.carry || !s.income;
+    pb.innerHTML = s.carry < 0 ? `Splitting <b>${fmt(s.base)}</b> = ${fmt(s.income)} income − ${fmt(overdue)} overdue`
+      : `Splitting <b>${fmt(s.base)}</b> = ${fmt(s.income)} income + ${fmt(s.carry)} carried over`;
 
     const bucketsEl = document.getElementById('buckets');
     const existing = bucketsEl.querySelectorAll('.bucket');
-    const html = BUCKETS.map((b, i) => {
-      const budget = s.income * split[i] / 100, used = s.byBucket[b.id];
+    const overdueCard = overdue ? `<div class="bucket overdue" style="--c:var(--expense)">
+        <div class="top"><div class="name"><i></i>Overdue</div><div class="pctl">${s.income ? Math.round(overdue / s.income * 100) : 0}%</div></div>
+        <div class="desc">Overdraft from before payday, already paid from this month's income</div>
+        <div class="amt"><span>Covered <b>${fmt(overdue)}</b></span><span>${s.opening != null ? 'balance was ' + fmt(s.opening) : ''}</span></div>
+        <div class="meter over"><div data-w="100"></div></div>
+      </div>` : '';
+    const html = overdueCard + BUCKETS.map((b, i) => {
+      const budget = s.base * split[i] / 100, used = s.byBucket[b.id];
       const pct = budget ? used / budget : (used ? 1.01 : 0);
       const isFuture = b.id === 'future';
       const over = !isFuture && used > budget && budget > 0;
@@ -1567,7 +1586,8 @@
     document.querySelector(`[data-pctl="${i}"]`).textContent = state.split[i];
     const total = state.split.reduce((a, b) => a + b, 0);
     const pt = document.getElementById('planTotal'); pt.textContent = `Total ${total}%`; pt.classList.toggle('bad', total !== 100);
-    document.querySelectorAll('#allocBar div').forEach((d, j) => d.style.flexBasis = state.split[j] / Math.max(total, 1) * 100 + '%');
+    const sm = summary(view), od = sm.carry < 0 ? -sm.carry : 0, share = sm.base / Math.max(1, sm.base + od);
+    document.querySelectorAll('#allocBar [data-seg]').forEach(d => d.style.flexBasis = state.split[+d.dataset.seg] / Math.max(total, 1) * share * 100 + '%');
   });
   document.getElementById('buckets').addEventListener('change', () => render());
 
