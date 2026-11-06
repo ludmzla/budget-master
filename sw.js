@@ -1,6 +1,6 @@
 // Lumen service worker: makes the app open offline.
 // Bump VERSION when shipping changes to the app shell.
-const VERSION = 'lumen-v17';
+const VERSION = 'lumen-v18';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/apple-touch-icon.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {

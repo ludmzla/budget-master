@@ -567,6 +567,19 @@
   }
   .scroll-ind.on { opacity: 1; transition: opacity .1s; }
   .sheet-done { display: none; }
+  .ml-short { display: none; }
+  #monthLabel { white-space: nowrap; }
+  .lang-wrap { position: relative; }
+  .lang-btn span { font-size: 18px; line-height: 1; }
+  .lang-menu {
+    position: absolute; right: -6px; top: calc(100% + 12px); z-index: 40; min-width: 220px; padding: 6px; border-radius: 18px;
+    display: flex; flex-direction: column; gap: 2px; background: var(--sheet-bg); border: 1px solid var(--stroke);
+    box-shadow: 0 20px 50px -18px rgba(0,0,0,.45); animation: rise .25s var(--ease);
+  }
+  .lang-menu button { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: 15px; text-align: left; transition: background .15s; }
+  .lang-menu button span { font-size: 20px; }
+  .lang-menu button:hover { background: rgba(var(--ink), .06); }
+  .lang-menu button.on { background: rgba(var(--ink), .09); font-weight: 600; }
   .grabber { display: none; }
   .sheet-head h3 { margin-bottom: 18px; }
   @media (max-width: 720px) {
@@ -651,7 +664,10 @@
     .scrim:not(.sheet) .modal-actions { position: sticky; bottom: calc(-20px - env(safe-area-inset-bottom, 0px)); margin: 18px -20px calc(-20px - env(safe-area-inset-bottom, 0px)); padding: 12px 20px calc(14px + env(safe-area-inset-bottom, 0px)); background: var(--sheet-bg); border-top: 1px solid var(--stroke); }
     .scrim:not(.sheet) .modal-actions .btn { height: 46px; flex: 1; justify-content: center; }
     .scrim:not(.sheet) .modal-actions .btn[style*="margin-right:auto"] { flex: none; }
-    nav.top { padding-left: 14px; }
+    nav.top { padding-left: 14px; gap: 4px; }
+    .month-switch { margin-right: 2px; }
+    .ml-long { display: none; }
+    .ml-short { display: inline; }
     .month-switch span { min-width: 92px; font-size: 13px; }
     .nav-add, .logo-text { display: none; }
     .search input { width: 100px; }
@@ -671,13 +687,21 @@
     <div class="logo"><div class="logo-mark"></div><span class="logo-text">Lumen</span></div>
     <div class="spacer"></div>
     <div class="month-switch">
-      <button class="icon-btn" id="prevM" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="icon-btn" id="prevM" aria-label="Previous month" data-i18n-aria="nav.prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
       <span id="monthLabel">—</span>
-      <button class="icon-btn" id="nextM" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+      <button class="icon-btn" id="nextM" aria-label="Next month" data-i18n-aria="nav.next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
     </div>
-    <button class="icon-btn" id="themeToggle" aria-label="Switch light or dark"><svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
-    <button class="icon-btn" id="openSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
-    <button class="btn btn-primary nav-add" data-add><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Add entry <kbd>N</kbd></button>
+    <div class="lang-wrap">
+      <button class="icon-btn lang-btn" id="langBtn" aria-label="Language" data-i18n-aria="nav.lang" aria-haspopup="true" aria-expanded="false"><span id="langFlag">🇬🇧</span></button>
+      <div class="lang-menu" id="langMenu" hidden>
+        <button type="button" data-lang="en"><span>🇬🇧</span>English</button>
+        <button type="button" data-lang="de"><span>🇩🇪</span>Deutsch</button>
+        <button type="button" data-lang="pt"><span>🇧🇷</span>Português (Brasil)</button>
+      </div>
+    </div>
+    <button class="icon-btn" id="themeToggle" aria-label="Switch light or dark" data-i18n-aria="nav.theme"><svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    <button class="icon-btn" id="openSettings" aria-label="Settings" data-i18n-aria="nav.settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <button class="btn btn-primary nav-add" data-add><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="nav.add">Add entry</span> <kbd>N</kbd></button>
   </nav>
 
   <main class="grid" id="main" data-view="home">
@@ -690,22 +714,22 @@
       <p class="sub" id="subline">Every euro gets a job. Track what comes in, decide where it goes.</p>
       <div class="balance">
         <div>
-          <div class="label">Left to spend this month</div>
+          <div class="label" data-i18n="hero.left">Left to spend this month</div>
           <div class="big" id="balanceBig">$0</div>
         </div>
         <span class="delta up" id="balanceDelta">—</span>
       </div>
       <div class="bank-row" id="bankRow" hidden></div>
       <div class="stats">
-        <div class="stat"><div class="k"><i style="background:var(--income);box-shadow:0 0 8px var(--income)"></i>Income</div><div class="v" id="statIncome">$0</div></div>
-        <div class="stat"><div class="k"><i style="background:var(--expense);box-shadow:0 0 8px var(--expense)"></i>Spent</div><div class="v" id="statExpense">$0</div><div class="stat-note" id="statExpenseNote" hidden></div></div>
-        <div class="stat"><div class="k"><i style="background:var(--accent);box-shadow:0 0 8px var(--accent)"></i>Saved & invested</div><div class="v" id="statSaved">$0</div></div>
+        <div class="stat"><div class="k"><i style="background:var(--income);box-shadow:0 0 8px var(--income)"></i><span data-i18n="stat.income">Income</span></div><div class="v" id="statIncome">$0</div></div>
+        <div class="stat"><div class="k"><i style="background:var(--expense);box-shadow:0 0 8px var(--expense)"></i><span data-i18n="stat.spent">Spent</span></div><div class="v" id="statExpense">$0</div><div class="stat-note" id="statExpenseNote" hidden></div></div>
+        <div class="stat"><div class="k"><i style="background:var(--accent);box-shadow:0 0 8px var(--accent)"></i><span data-i18n="stat.saved">Saved &amp; invested</span></div><div class="v" id="statSaved">$0</div></div>
       </div>
     </section>
 
     <!-- Savings rate ring -->
     <section data-tab="home" class="glass card span-4 ring-card reveal" style="animation-delay:.12s">
-      <div class="card-head"><div class="card-title"><span class="dot"></span>Savings rate</div></div>
+      <div class="card-head"><div class="card-title"><span class="dot"></span><span data-i18n="ring.title">Savings rate</span></div></div>
       <div class="ring-wrap">
         <svg viewBox="0 0 120 120">
           <defs>
@@ -716,7 +740,7 @@
           <circle cx="60" cy="60" r="50" fill="none" style="stroke:rgba(var(--ink),.07)" stroke-width="10"/>
           <circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="url(#ringGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 314.16" style="transition:stroke-dasharray 1.4s var(--ease);filter:drop-shadow(0 0 8px rgba(96,165,250,.6))"/>
         </svg>
-        <div class="ring-center"><div class="pct"><span id="ratePct">0</span><small>%</small></div><div class="cap">of income kept</div></div>
+        <div class="ring-center"><div class="pct"><span id="ratePct">0</span><small>%</small></div><div class="cap" data-i18n="ring.cap">of income kept</div></div>
       </div>
       <div class="insights" id="insights"></div>
     </section>
@@ -724,7 +748,7 @@
     <!-- Income plan -->
     <section data-tab="plan" class="glass card span-8 reveal" id="planCard" style="animation-delay:.18s">
       <div class="card-head">
-        <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span>Income plan · give every euro a job</div>
+        <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span><span data-i18n="plan.title">Income plan · give every euro a job</span></div>
         <div style="display:flex;gap:8px;align-items:center">
           <span class="plan-total" id="planTotal"></span>
           <button class="btn btn-ghost" id="editPlan" style="height:32px;font-size:12px;padding:0 14px">Edit split</button>
@@ -738,7 +762,7 @@
 
     <!-- Income sources -->
     <section data-tab="plan" class="glass card span-4 reveal" style="animation-delay:.24s">
-      <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--accent-2);box-shadow:0 0 10px var(--accent-2)"></span>Where income comes from</div></div>
+      <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--accent-2);box-shadow:0 0 10px var(--accent-2)"></span><span data-i18n="donut.title">Where income comes from</span></div></div>
       <div class="donut-row">
         <div class="donut">
           <svg viewBox="0 0 42 42" id="donutSvg"></svg>
@@ -751,26 +775,26 @@
     <!-- Cash flow -->
     <section data-tab="trends" class="glass card span-7 reveal flow-card" style="animation-delay:.3s">
       <div class="card-head">
-        <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span>Cash flow · last 6 months</div>
-        <div class="legend-inline"><span><i style="background:var(--income)"></i>Income</span><span><i style="background:var(--expense)"></i>Spent</span></div>
+        <div class="card-title"><span class="dot" style="background:var(--income);box-shadow:0 0 10px var(--income)"></span><span data-i18n="flow.title">Cash flow · last 6 months</span></div>
+        <div class="legend-inline"><span><i style="background:var(--income)"></i><span data-i18n="stat.income">Income</span></span><span><i style="background:var(--expense)"></i><span data-i18n="stat.spent">Spent</span></span></div>
       </div>
       <div class="bars" id="bars"></div>
     </section>
 
     <!-- Category spend -->
     <section data-tab="trends" class="glass card span-5 reveal" style="animation-delay:.36s">
-      <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--expense);box-shadow:0 0 10px var(--expense)"></span>Spending by category</div></div>
+      <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--expense);box-shadow:0 0 10px var(--expense)"></span><span data-i18n="cats.title">Spending by category</span></div></div>
       <div class="cats" id="cats"></div>
     </section>
 
     <!-- Transactions -->
     <section data-tab="activity" class="glass card span-7 reveal" style="animation-delay:.42s">
       <div class="card-head" style="flex-wrap:wrap">
-        <div class="card-title"><span class="dot"></span>Activity</div>
+        <div class="card-title"><span class="dot"></span><span data-i18n="tab.activity">Activity</span></div>
         <div class="tx-tools">
-          <button class="btn btn-ghost" data-import style="height:34px;font-size:12px;padding:0 14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Import bank CSV</button>
-          <div class="seg" id="txFilter"><span class="pill"></span><button data-f="all" class="on">All</button><button data-f="income">Income</button><button data-f="expense">Expenses</button></div>
-          <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="txSearch" placeholder="Search…" /></label>
+          <button class="btn btn-ghost" data-import style="height:34px;font-size:12px;padding:0 14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><span data-i18n="act.import">Import bank CSV</span></button>
+          <div class="seg" id="txFilter"><span class="pill"></span><button data-f="all" class="on" data-i18n="act.all">All</button><button data-f="income" data-i18n="stat.income">Income</button><button data-f="expense" data-i18n="act.expenses">Expenses</button></div>
+          <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="txSearch" placeholder="Search…" data-i18n-ph="act.search" /></label>
         </div>
       </div>
       <div class="tx-list" id="txList"></div>
@@ -778,42 +802,42 @@
 
     <!-- Goals -->
     <section data-tab="goals" class="glass card span-5 reveal" style="animation-delay:.48s">
-      <div class="card-head"><div class="card-title"><span class="dot" style="background:#f472b6;box-shadow:0 0 10px #f472b6"></span>Savings goals</div></div>
+      <div class="card-head"><div class="card-title"><span class="dot" style="background:#f472b6;box-shadow:0 0 10px #f472b6"></span><span data-i18n="goals.title">Savings goals</span></div></div>
       <div class="goals" id="goals"></div>
     </section>
   </main>
 
-  <footer>Lumen keeps everything in this browser — nothing leaves your device. Press <span class="mono">N</span> to add an entry.</footer>
+  <footer data-i18n="footer">Lumen keeps everything in this browser — nothing leaves your device. Press <span class="mono">N</span> to add an entry.</footer>
 </div>
 
 <nav class="tabbar" aria-label="Sections">
   <div class="tabs glass" id="tabs" role="tablist"><span class="tab-pill"></span>
-    <button class="tab" role="tab" data-go="home" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
-    <button class="tab" role="tab" data-go="plan" aria-label="Plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg><span>Plan</span></button>
-    <button class="tab" role="tab" data-go="activity" aria-label="Activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r=".6"/><circle cx="3.5" cy="12" r=".6"/><circle cx="3.5" cy="18" r=".6"/></svg><span>Activity</span></button>
-    <button class="tab" role="tab" data-go="trends" aria-label="Trends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-11"/></svg><span>Trends</span></button>
-    <button class="tab" role="tab" data-go="goals" aria-label="Goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg><span>Goals</span></button>
+    <button class="tab" role="tab" data-go="home" aria-label="Home" data-i18n-aria="tab.home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="tab.home">Home</span></button>
+    <button class="tab" role="tab" data-go="plan" aria-label="Plan" data-i18n-aria="tab.plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg><span data-i18n="tab.plan">Plan</span></button>
+    <button class="tab" role="tab" data-go="activity" aria-label="Activity" data-i18n-aria="tab.activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r=".6"/><circle cx="3.5" cy="12" r=".6"/><circle cx="3.5" cy="18" r=".6"/></svg><span data-i18n="tab.activity">Activity</span></button>
+    <button class="tab" role="tab" data-go="trends" aria-label="Trends" data-i18n-aria="tab.trends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-11"/></svg><span data-i18n="tab.trends">Trends</span></button>
+    <button class="tab" role="tab" data-go="goals" aria-label="Goals" data-i18n-aria="tab.goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg><span data-i18n="tab.goals">Goals</span></button>
   </div>
-  <button class="tab-add glass" data-add aria-label="Add entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="tab-add glass" data-add aria-label="Add entry" data-i18n-aria="nav.add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 </nav>
 
 <!-- Transaction modal -->
 <div class="scrim" id="txModal">
   <form class="modal glass" id="txForm" autocomplete="off">
-    <h3 id="txModalTitle">New <em>entry</em></h3>
-    <div class="seg" id="typeSeg"><span class="pill"></span><button type="button" data-t="expense" class="on">Expense</button><button type="button" data-t="income">Income</button></div>
+    <h3 id="txModalTitle" data-i18n="tx.new">New <em>entry</em></h3>
+    <div class="seg" id="typeSeg"><span class="pill"></span><button type="button" data-t="expense" class="on" data-i18n="type.expense">Expense</button><button type="button" data-t="income" data-i18n="type.income">Income</button></div>
     <div class="amount-in"><span class="cur" id="curSym">€</span><input id="fAmount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required /></div>
-    <div class="field"><label>Category</label><div class="cat-grid" id="catGrid"></div></div>
-    <div class="field"><label for="fNote">Description</label><input class="input" id="fNote" placeholder="e.g. Monthly rent, Client invoice…" /></div>
+    <div class="field"><label data-i18n="f.category">Category</label><div class="cat-grid" id="catGrid"></div></div>
+    <div class="field"><label for="fNote" data-i18n="f.desc">Description</label><input class="input" id="fNote" placeholder="e.g. Monthly rent, Client invoice…" data-i18n-ph="f.descPh" /></div>
     <div class="row2">
-      <div class="field"><label for="fDate">Date</label><input class="input" id="fDate" type="date" required /></div>
-      <div class="field" id="bmField" style="display:none"><label for="fBm">Counts toward</label><select class="input" id="fBm"></select></div>
-      <div class="field" id="goalField" style="display:none"><label for="fGoal">Put toward goal</label><select class="input" id="fGoal"></select></div>
+      <div class="field"><label for="fDate" data-i18n="f.date">Date</label><input class="input" id="fDate" type="date" required /></div>
+      <div class="field" id="bmField" style="display:none"><label for="fBm" data-i18n="f.counts">Counts toward</label><select class="input" id="fBm"></select></div>
+      <div class="field" id="goalField" style="display:none"><label for="fGoal" data-i18n="f.goal">Put toward goal</label><select class="input" id="fGoal"></select></div>
     </div>
     <div class="modal-actions">
-      <button type="button" class="btn btn-ghost danger" id="txDelete" style="margin-right:auto;display:none">Delete</button>
-      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
-      <button type="submit" class="btn btn-primary">Save</button>
+      <button type="button" class="btn btn-ghost danger" id="txDelete" style="margin-right:auto;display:none" data-i18n="btn.delete">Delete</button>
+      <button type="button" class="btn btn-ghost" data-close data-i18n="btn.cancel">Cancel</button>
+      <button type="submit" class="btn btn-primary" data-i18n="btn.save">Save</button>
     </div>
   </form>
 </div>
@@ -821,21 +845,21 @@
 <!-- Category modal -->
 <div class="scrim" id="catModal">
   <form class="modal glass" id="catForm" autocomplete="off">
-    <h3 id="catModalTitle">New <em>category</em></h3>
-    <div class="seg" id="catTypeSeg"><span class="pill"></span><button type="button" data-ct="expense" class="on">Expense</button><button type="button" data-ct="income">Income</button></div>
+    <h3 id="catModalTitle" data-i18n="cat.new">New <em>category</em></h3>
+    <div class="seg" id="catTypeSeg"><span class="pill"></span><button type="button" data-ct="expense" class="on" data-i18n="type.expense">Expense</button><button type="button" data-ct="income" data-i18n="type.income">Income</button></div>
     <div class="name-row">
-      <div class="field"><label for="cName">Name</label><input class="input" id="cName" maxlength="24" placeholder="e.g. Pets, Gym, Kids" required /></div>
-      <div class="field"><label for="cEmoji">Icon</label><input class="input" id="cEmoji" maxlength="8" placeholder="🐾" /></div>
+      <div class="field"><label for="cName" data-i18n="f.name">Name</label><input class="input" id="cName" maxlength="24" placeholder="e.g. Pets, Gym, Kids" data-i18n-ph="f.namePh" required /></div>
+      <div class="field"><label for="cEmoji" data-i18n="f.icon">Icon</label><input class="input" id="cEmoji" maxlength="8" placeholder="🐾" /></div>
     </div>
     <div class="field"><div class="emoji-grid" id="cEmojis"></div></div>
-    <div class="field"><label>Color</label><div class="cat-grid" id="cColors"></div></div>
-    <div class="field" id="cBucketField"><label>Counts toward</label>
-      <div class="seg" id="cBucketSeg" style="margin:0"><span class="pill"></span><button type="button" data-cb="needs">Needs</button><button type="button" data-cb="wants">Wants</button><button type="button" data-cb="future">Future you</button></div>
+    <div class="field"><label data-i18n="f.color">Color</label><div class="cat-grid" id="cColors"></div></div>
+    <div class="field" id="cBucketField"><label data-i18n="f.counts">Counts toward</label>
+      <div class="seg" id="cBucketSeg" style="margin:0"><span class="pill"></span><button type="button" data-cb="needs" data-i18n="b.needs">Needs</button><button type="button" data-cb="wants" data-i18n="b.wants">Wants</button><button type="button" data-cb="future" data-i18n="b.future">Future you</button></div>
     </div>
     <div class="modal-actions">
-      <button type="button" class="btn btn-ghost danger" id="catDelete" style="margin-right:auto;display:none">Delete</button>
-      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
-      <button type="submit" class="btn btn-primary">Save</button>
+      <button type="button" class="btn btn-ghost danger" id="catDelete" style="margin-right:auto;display:none" data-i18n="btn.delete">Delete</button>
+      <button type="button" class="btn btn-ghost" data-close data-i18n="btn.cancel">Cancel</button>
+      <button type="submit" class="btn btn-primary" data-i18n="btn.save">Save</button>
     </div>
   </form>
 </div>
@@ -843,16 +867,16 @@
 <!-- Goal modal -->
 <div class="scrim" id="goalModal">
   <form class="modal glass" id="goalForm" autocomplete="off">
-    <h3 id="goalModalTitle">New <em>goal</em></h3>
-    <div class="field"><label for="gName">Name</label><input class="input" id="gName" placeholder="Emergency fund, Japan trip…" required /></div>
+    <h3 id="goalModalTitle" data-i18n="goal.new">New <em>goal</em></h3>
+    <div class="field"><label for="gName" data-i18n="f.name">Name</label><input class="input" id="gName" placeholder="Emergency fund, Japan trip…" data-i18n-ph="goal.namePh" required /></div>
     <div class="row2">
-      <div class="field"><label for="gTarget">Target</label><input class="input" id="gTarget" type="number" min="1" step="0.01" required /></div>
-      <div class="field"><label for="gSaved">Already saved</label><input class="input" id="gSaved" type="number" min="0" step="0.01" value="0" /></div>
+      <div class="field"><label for="gTarget" data-i18n="goal.target">Target</label><input class="input" id="gTarget" type="number" min="1" step="0.01" required /></div>
+      <div class="field"><label for="gSaved" data-i18n="goal.already">Already saved</label><input class="input" id="gSaved" type="number" min="0" step="0.01" value="0" /></div>
     </div>
-    <div class="field"><label>Color</label><div class="cat-grid" id="gColors"></div></div>
+    <div class="field"><label data-i18n="f.color">Color</label><div class="cat-grid" id="gColors"></div></div>
     <div class="modal-actions">
-      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
-      <button type="submit" class="btn btn-primary">Save goal</button>
+      <button type="button" class="btn btn-ghost" data-close data-i18n="btn.cancel">Cancel</button>
+      <button type="submit" class="btn btn-primary" data-i18n="goal.save">Save goal</button>
     </div>
   </form>
 </div>
@@ -860,12 +884,12 @@
 <!-- Fund goal modal -->
 <div class="scrim" id="fundModal">
   <form class="modal glass" id="fundForm" autocomplete="off">
-    <h3>Add to <em id="fundName">goal</em></h3>
+    <h3><span data-i18n="fund.addTo">Add to</span> <em id="fundName">goal</em></h3>
     <div class="amount-in"><span class="cur cur-sym">€</span><input id="fundAmount" type="number" step="0.01" min="0.01" placeholder="0.00" required /></div>
-    <p style="font-size:13px;color:var(--muted)">This also logs a <b style="color:var(--text);font-weight:500">Savings</b> entry for the month, so it counts toward your Future bucket.</p>
+    <p style="font-size:13px;color:var(--muted)" data-i18n="fund.note">This also logs a <b style="color:var(--text);font-weight:500">Savings</b> entry for the month, so it counts toward your Future bucket.</p>
     <div class="modal-actions">
-      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
-      <button type="submit" class="btn btn-primary">Add funds</button>
+      <button type="button" class="btn btn-ghost" data-close data-i18n="btn.cancel">Cancel</button>
+      <button type="submit" class="btn btn-primary" data-i18n="fund.btn">Add funds</button>
     </div>
   </form>
 </div>
@@ -873,21 +897,13 @@
 <!-- Bank import modal -->
 <div class="scrim" id="importModal">
   <div class="modal glass wide">
-    <h3>Import <em>bank statement</em></h3>
+    <h3 data-i18n="imp.title">Import <em>bank statement</em></h3>
     <div id="impStep1">
-      <div class="imp-help">
-        Works with <b>Volksbank / VR-Banking</b> exports (and most other banks' CSV files). Your file is read right here in the browser and never uploaded.
-        <ol>
-          <li>Log in to online banking at <b>voba-oberberg.de</b> (or the VR Banking app on desktop).</li>
-          <li>Open your account and go to <b>Umsätze</b> (transactions), then pick a date range.</li>
-          <li>Choose <b>Exportieren → CSV</b> and save the file.</li>
-          <li>Drop it below. Duplicates are skipped, so overlapping date ranges are fine.</li>
-        </ol>
-      </div>
+      <div class="imp-help" data-i18n="imp.help"></div>
       <label class="dropzone" id="dropzone">
         <span class="big">🏦</span>
-        <span>Drop your <b>.csv</b> here or click to choose</span>
-        <small>On iPhone the file may just be called “Daten”. That’s fine, pick it.</small>
+        <span data-i18n="imp.drop">Drop your <b>.csv</b> here or click to choose</span>
+        <small data-i18n="imp.dropHint">On iPhone the file may just be called “Daten”. That’s fine, pick it.</small>
         <input type="file" id="csvFile" hidden />
       </label>
     </div>
@@ -898,22 +914,25 @@
       <label class="check" id="impCurWrap" hidden><input type="checkbox" id="impCur" checked /> <span id="impCurLabel">Switch display currency to EUR</span></label>
     </div>
     <div class="modal-actions">
-      <button type="button" class="btn btn-ghost" id="impBack" style="margin-right:auto" hidden>← Other file</button>
-      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="button" class="btn btn-ghost" id="impBack" style="margin-right:auto" hidden data-i18n="imp.back">← Other file</button>
+      <button type="button" class="btn btn-ghost" data-close data-i18n="btn.cancel">Cancel</button>
       <button type="button" class="btn btn-primary" id="impGo" hidden>Import</button>
     </div>
   </div>
 </div>
-<div class="drop-overlay" id="dropOverlay">Drop your bank CSV to import</div>
+<div class="drop-overlay" id="dropOverlay" data-i18n="imp.overlay">Drop your bank CSV to import</div>
 
 <!-- Settings modal -->
 <div class="scrim sheet" id="settingsModal">
   <div class="modal glass">
-    <div class="sheet-head"><h3>Settings</h3><button type="button" class="sheet-done" data-close>Done</button></div>
-    <div class="field"><label>Appearance</label>
-      <div class="seg" id="themeSeg" style="width:100%;margin:0"><span class="pill"></span><button type="button" data-th="system">System</button><button type="button" data-th="light">Light</button><button type="button" data-th="dark">Dark</button></div>
+    <div class="sheet-head"><h3 data-i18n="set.title">Settings</h3><button type="button" class="sheet-done" data-close data-i18n="btn.done">Done</button></div>
+    <div class="field"><label data-i18n="set.language">Language</label>
+      <div class="seg" id="langSeg" style="width:100%;margin:0"><span class="pill"></span><button type="button" data-lg="en">🇬🇧 English</button><button type="button" data-lg="de">🇩🇪 Deutsch</button><button type="button" data-lg="pt">🇧🇷 Português</button></div>
     </div>
-    <div class="field"><label for="sCurrency">Currency</label>
+    <div class="field"><label data-i18n="set.appearance">Appearance</label>
+      <div class="seg" id="themeSeg" style="width:100%;margin:0"><span class="pill"></span><button type="button" data-th="system" data-i18n="set.system">System</button><button type="button" data-th="light" data-i18n="set.light">Light</button><button type="button" data-th="dark" data-i18n="set.dark">Dark</button></div>
+    </div>
+    <div class="field"><label for="sCurrency" data-i18n="set.currency">Currency</label>
       <select class="input" id="sCurrency">
         <option value="EUR">EUR — Euro</option><option value="USD">USD — US Dollar</option><option value="GBP">GBP — British Pound</option>
         <option value="BRL">BRL — Brazilian Real</option><option value="CAD">CAD — Canadian Dollar</option><option value="AUD">AUD — Australian Dollar</option>
@@ -921,53 +940,53 @@
       </select>
     </div>
     <div class="field">
-      <label>Payday</label>
+      <label data-i18n="set.payday">Payday</label>
       <div class="payday-box">
-        <label class="check" style="margin:0"><input type="checkbox" id="pdOn" /> <span>Salary paid at the end of the month funds the <b>next</b> month</span></label>
+        <label class="check" style="margin:0"><input type="checkbox" id="pdOn" /> <span data-i18n="pd.check">Salary paid at the end of the month funds the <b>next</b> month</span></label>
         <div class="row2" id="pdOpts" style="margin-top:12px">
-          <div><label for="pdDay" style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px">Counts as next month from day</label><select class="input" id="pdDay"></select></div>
-          <div><label for="pdScope" style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px">Applies to</label><select class="input" id="pdScope"><option value="salary">Salary only</option><option value="all">All income</option></select></div>
+          <div><label for="pdDay" style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px" data-i18n="pd.day">Counts as next month from day</label><select class="input" id="pdDay"></select></div>
+          <div><label for="pdScope" style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px" data-i18n="pd.applies">Applies to</label><select class="input" id="pdScope"><option value="salary" data-i18n="pd.salary">Salary only</option><option value="all" data-i18n="pd.all">All income</option></select></div>
         </div>
         <p class="pd-example" id="pdExample"></p>
       </div>
     </div>
     <div class="field">
-      <label>Carry over</label>
+      <label data-i18n="set.carry">Carry over</label>
       <div class="payday-box">
-        <label class="check" style="margin:0"><input type="checkbox" id="odCarry" /> <span>Include what was on the account before the month started (plus <b>or</b> minus) in <b>Left to spend</b></span></label>
-        <p class="pd-example">Uses the account balance from your Volksbank import, so Left to spend matches your bank. Example: at +120 € before payday, those 120 € are added; at −400 €, 400 € of the salary just covers the overdraft.</p>
+        <label class="check" style="margin:0"><input type="checkbox" id="odCarry" /> <span data-i18n="carry.check">Include what was on the account before the month started (plus <b>or</b> minus) in <b>Left to spend</b></span></label>
+        <p class="pd-example" data-i18n="carry.note">Uses the account balance from your Volksbank import, so Left to spend matches your bank. Example: at +120 € before payday, those 120 € are added; at −400 €, 400 € of the salary just covers the overdraft.</p>
       </div>
     </div>
-    <div class="field"><label>Your categories</label>
+    <div class="field"><label data-i18n="set.cats">Your categories</label>
       <div class="ccat-list" id="customCatList"></div>
-      <button type="button" class="btn btn-ghost" id="addCatBtn" style="width:100%;justify-content:center;height:44px;border-radius:14px">＋ New category</button>
+      <button type="button" class="btn btn-ghost" id="addCatBtn" style="width:100%;justify-content:center;height:44px;border-radius:14px" data-i18n="set.newCat">＋ New category</button>
     </div>
     <div class="settings-list">
-      <button class="btn btn-ghost" id="exportJson">☁️ &nbsp;Save backup to iCloud Drive / Files</button>
-      <button class="btn btn-ghost" id="copyBackup">⧉ &nbsp;Copy backup (to move your data)</button>
-      <button class="btn btn-ghost" id="pasteBackup">⇣ &nbsp;Restore from copied backup</button>
-      <button class="btn btn-ghost" id="exportCsv">⤓ &nbsp;Export transactions (CSV)</button>
-      <button class="btn btn-ghost" data-import>🏦 &nbsp;Import bank statement (CSV)</button>
-      <button class="btn btn-ghost" id="importJson">⤒ &nbsp;Import backup</button>
-      <button class="btn btn-ghost" id="loadDemo">✦ &nbsp;Load demo data</button>
-      <button class="btn btn-ghost danger" id="clearEntries">🧹 &nbsp;Clear entries only (keep categories &amp; settings)</button>
-      <button class="btn btn-ghost danger" id="clearAll">✕ &nbsp;Start fresh (erase everything)</button>
+      <button class="btn btn-ghost" id="exportJson" data-i18n="set.save">☁️ &nbsp;Save backup to iCloud Drive / Files</button>
+      <button class="btn btn-ghost" id="copyBackup" data-i18n="set.copy">⧉ &nbsp;Copy backup (to move your data)</button>
+      <button class="btn btn-ghost" id="pasteBackup" data-i18n="set.paste">⇣ &nbsp;Restore from copied backup</button>
+      <button class="btn btn-ghost" id="exportCsv" data-i18n="set.csv">⤓ &nbsp;Export transactions (CSV)</button>
+      <button class="btn btn-ghost" data-import data-i18n="set.import">🏦 &nbsp;Import bank statement (CSV)</button>
+      <button class="btn btn-ghost" id="importJson" data-i18n="set.importBackup">⤒ &nbsp;Import backup</button>
+      <button class="btn btn-ghost" id="loadDemo" data-i18n="set.demo">✦ &nbsp;Load demo data</button>
+      <button class="btn btn-ghost danger" id="clearEntries" data-i18n="set.clear">🧹 &nbsp;Clear entries only (keep categories &amp; settings)</button>
+      <button class="btn btn-ghost danger" id="clearAll" data-i18n="set.fresh">✕ &nbsp;Start fresh (erase everything)</button>
     </div>
     <input type="file" id="importFile" hidden />
     <p class="store-note" id="storeNote"></p>
-    <div class="modal-actions sheet-foot"><button class="btn btn-primary" data-close>Done</button></div>
+    <div class="modal-actions sheet-foot"><button class="btn btn-primary" data-close data-i18n="btn.done">Done</button></div>
   </div>
 </div>
 
 <!-- Paste backup modal -->
 <div class="scrim" id="pasteModal">
   <div class="modal glass">
-    <h3>Restore <em>backup</em></h3>
-    <p class="imp-help">Paste the text you copied with <b>Copy backup</b>. This replaces everything currently in the app.</p>
+    <h3 data-i18n="paste.title">Restore <em>backup</em></h3>
+    <p class="imp-help" data-i18n="paste.help">Paste the text you copied with <b>Copy backup</b>. This replaces everything currently in the app.</p>
     <textarea class="input" id="pasteText" placeholder='{"currency":"EUR", ...}'></textarea>
     <div class="modal-actions">
-      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
-      <button type="button" class="btn btn-primary" id="pasteGo">Restore</button>
+      <button type="button" class="btn btn-ghost" data-close data-i18n="btn.cancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="pasteGo" data-i18n="paste.go">Restore</button>
     </div>
   </div>
 </div>
@@ -976,6 +995,876 @@
 
 <script>
 (() => {
+  /* ================= Languages ================= */
+  const I18N = {
+  "en": {
+  "nav.add": "Add entry",
+  "nav.prev": "Previous month",
+  "nav.next": "Next month",
+  "nav.theme": "Switch light or dark",
+  "nav.settings": "Settings",
+  "nav.lang": "Language",
+  "tab.home": "Home",
+  "tab.plan": "Plan",
+  "tab.activity": "Activity",
+  "tab.trends": "Trends",
+  "tab.goals": "Goals",
+  "hero.left": "Left to spend this month",
+  "stat.income": "Income",
+  "stat.spent": "Spent",
+  "stat.saved": "Saved & invested",
+  "stat.overdue": "incl. {a} overdue",
+  "greet.morning": "Good morning",
+  "greet.afternoon": "Good afternoon",
+  "greet.evening": "Good evening",
+  "head.blank": "A blank page.",
+  "head.rebalance": "Time to rebalance.",
+  "head.thriving": "You're thriving.",
+  "head.balanced": "Nicely balanced.",
+  "head.counts": "Every euro counts.",
+  "sub.text": "You've brought in {inc} and given {p}% of it a job. {rest}",
+  "sub.ok": "The rest is breathing room.",
+  "sub.bad": "Spending has outpaced income. Let’s look at where.",
+  "sub.empty": "Add your first income to start planning. Every euro gets a job.",
+  "day.n": "Day {n}",
+  "day.closed": "Closed",
+  "day.upcoming": "Upcoming",
+  "day.back": "Looking back",
+  "day.ahead": "Planning ahead",
+  "day.period": "{n} days left · {a} – {b}",
+  "day.month": "{n} days left in {m}",
+  "delta.vs": "{arrow} {amt} vs {m}",
+  "bank.balance": "Bank balance",
+  "bank.neg": "Includes <b>{a}</b> overdraft carried in",
+  "bank.pos": "Includes <b>+{a}</b> carried over from before payday",
+  "ring.title": "Savings rate",
+  "ring.cap": "of income kept",
+  "days_one": "1 day",
+  "days_other": "{n} days",
+  "ins.od": "In the overdraft for <b>{d}</b> this month (lowest {low}). Dispo interest is expensive.",
+  "ins.over": "<b>{b}</b> is {a} over its {p}% slice.",
+  "ins.near": "<b>{p}%</b> of {b} used with {d} days to go.",
+  "ins.future": "Future-you goal hit: <b>{a}</b> saved & invested.",
+  "ins.up": "{c} is <b>up {a}</b> from last month.",
+  "ins.down": "{c} is <b>down {a}</b> from last month.",
+  "ins.perDay": "You can spend about <b>{a}/day</b> for the rest of the month.",
+  "ins.ok": "Everything is on track. Nice work.",
+  "ins.noIncome": "Log your income to unlock insights.",
+  "plan.title": "Income plan · give every euro a job",
+  "plan.edit": "Edit split",
+  "plan.done": "Done",
+  "plan.total": "Total {n}%",
+  "plan.baseNeg": "Splitting <b>{b}</b> = {i} income − {o} overdue",
+  "plan.basePos": "Splitting <b>{b}</b> = {i} income + {c} carried over",
+  "plan.aggr": "Aggressive saver",
+  "plan.splitErr": "Your split should add up to 100%",
+  "od.name": "Overdue",
+  "od.desc": "Overdraft from before payday, already paid from this month's income",
+  "od.covered": "Covered <b>{a}</b>",
+  "od.was": "balance was {a}",
+  "b.needs": "Needs",
+  "b.wants": "Wants",
+  "b.future": "Future you",
+  "b.needs.d": "Rent, bills, groceries, transport",
+  "b.wants.d": "Dining, fun, shopping, travel",
+  "b.future.d": "Savings, investing, debt payoff",
+  "bk.noIncome": "Add income to fund this bucket",
+  "bk.goalMet": "Goal met · {a} extra",
+  "bk.toSet": "{a} still to set aside",
+  "bk.over": "{a} over budget",
+  "bk.left": "{a} left to spend",
+  "bk.setAside": "Set aside",
+  "bk.spent": "Spent",
+  "bk.of": "of {a}",
+  "donut.title": "Where income comes from",
+  "donut.total": "total income",
+  "donut.src_one": "from 1 source",
+  "donut.src_other": "from {n} sources",
+  "donut.none": "no income yet",
+  "donut.emptyT": "Nothing yet",
+  "donut.emptyB": "Add an income entry.",
+  "flow.title": "Cash flow · last 6 months",
+  "tip.in": "In",
+  "tip.out": "Out",
+  "tip.net": "Net",
+  "cats.title": "Spending by category",
+  "cats.emptyT": "All quiet",
+  "cats.emptyB": "No spending logged this month.",
+  "cats.show": "Show {n} unused",
+  "cats.hide": "Hide {n} unused",
+  "act.import": "Import bank CSV",
+  "act.all": "All",
+  "act.expenses": "Expenses",
+  "act.search": "Search…",
+  "act.emptyT": "Nothing here",
+  "act.noMatch": "No matches for your search.",
+  "act.emptyB": "Press N or tap “Add entry” to log something.",
+  "act.shift": "paid {d} · for {m}",
+  "act.odTag": "account was at {a} before",
+  "goals.title": "Savings goals",
+  "goals.add": "+ Add",
+  "goals.edit": "Edit",
+  "goals.new": "New goal",
+  "goals.of": "{a} of {b}",
+  "footer": "Lumen keeps everything in this browser. Nothing leaves your device. Press <span class=\"mono\">N</span> to add an entry.",
+  "tx.new": "New <em>entry</em>",
+  "tx.edit": "Edit <em>entry</em>",
+  "type.expense": "Expense",
+  "type.income": "Income",
+  "f.category": "Category",
+  "f.desc": "Description",
+  "f.descPh": "e.g. Monthly rent, Client invoice…",
+  "f.date": "Date",
+  "f.counts": "Counts toward",
+  "f.goal": "Put toward goal",
+  "f.none": "— None —",
+  "f.auto": "Auto ({m})",
+  "btn.delete": "Delete",
+  "btn.cancel": "Cancel",
+  "btn.save": "Save",
+  "btn.done": "Done",
+  "cat.newChip": "＋ New",
+  "cat.new": "New <em>category</em>",
+  "cat.editT": "Edit <em>category</em>",
+  "f.name": "Name",
+  "f.namePh": "e.g. Pets, Gym, Kids",
+  "f.icon": "Icon",
+  "f.color": "Color",
+  "goal.new": "New <em>goal</em>",
+  "goal.editT": "Edit <em>goal</em>",
+  "goal.namePh": "Emergency fund, Japan trip…",
+  "goal.target": "Target",
+  "goal.already": "Already saved",
+  "goal.save": "Save goal",
+  "fund.addTo": "Add to",
+  "fund.note": "This also logs a <b style=\"color:var(--text);font-weight:500\">Savings</b> entry for the month, so it counts toward your Future bucket.",
+  "fund.btn": "Add funds",
+  "imp.title": "Import <em>bank statement</em>",
+  "imp.help": "Works with <b>Volksbank / VR-Banking</b> exports (and most other banks' CSV files). Your file is read right here in the browser and never uploaded.<ol><li>Log in to online banking at <b>voba-oberberg.de</b> (or the VR Banking app on desktop).</li><li>Open your account and go to <b>Umsätze</b> (transactions), then pick a date range.</li><li>Choose <b>Exportieren → CSV</b> and save the file.</li><li>Drop it below. Duplicates are skipped, so overlapping date ranges are fine.</li></ol>",
+  "imp.drop": "Drop your <b>.csv</b> here or click to choose",
+  "imp.dropHint": "On iPhone the file may just be called “Daten”. That’s fine, pick it.",
+  "imp.back": "← Other file",
+  "imp.go": "Import",
+  "imp.overlay": "Drop your bank CSV to import",
+  "imp.pdf": "That’s a PDF. Please export the transactions as CSV instead",
+  "imp.zip": "That’s an Excel/ZIP file. Please choose the CSV export",
+  "imp.emptyFile": "That file is empty. Try exporting again with a wider date range",
+  "imp.noRowsFile": "That file has no rows I can read. Is it the CSV export?",
+  "imp.col": "Column {n}",
+  "imp.fmt.vr": "Volksbank · VR-Banking export",
+  "imp.fmt.classic": "Volksbank · classic export",
+  "imp.fmt.csv": "CSV file",
+  "imp.bankTx": "Bank transaction",
+  "imp.mapDate": "Date column",
+  "imp.mapAmount": "Amount column",
+  "imp.mapPayee": "Description / payee",
+  "imp.needMap": "Pick the date and amount columns to continue",
+  "imp.noRows": "The file has headings but no transactions. Export again with a wider date range",
+  "imp.new": "<b>{n}</b> new",
+  "imp.dups": "<b>{n}</b> already imported",
+  "imp.balance": "🏦 Balance <b>{a}</b>",
+  "imp.dupTag": "already imported",
+  "imp.noneT": "No transactions found",
+  "imp.chooseCols": "Choose the columns above.",
+  "imp.checkExport": "Check that this is a transaction export (Umsätze).",
+  "imp.btn_one": "Import 1 transaction",
+  "imp.btn_other": "Import {n} transactions",
+  "imp.update": "Update balances",
+  "imp.cur": "Switch display currency to {c} (currently {cur})",
+  "imp.done_one": "Imported 1 transaction",
+  "imp.done_other": "Imported {n} transactions",
+  "imp.enriched": " · balances added to {n} older ones",
+  "imp.balAdded": "Balances added to {n} entries",
+  "set.title": "Settings",
+  "set.language": "Language",
+  "set.appearance": "Appearance",
+  "set.system": "System",
+  "set.light": "Light",
+  "set.dark": "Dark",
+  "set.currency": "Currency",
+  "set.payday": "Payday",
+  "pd.check": "Salary paid at the end of the month funds the <b>next</b> month",
+  "pd.day": "Counts as next month from day",
+  "pd.applies": "Applies to",
+  "pd.salary": "Salary only",
+  "pd.all": "All income",
+  "pd.lastDay": " (last day only)",
+  "pd.what.salary": "salary",
+  "pd.what.all": "income",
+  "pd.example": "Example: {what} received on {prev} {d} starts {cur}'s budget, and spending from that day on counts toward {cur} too. You can override a single income entry by tapping it.",
+  "pd.off": "Income counts toward the month it arrives in.",
+  "set.carry": "Carry over",
+  "carry.check": "Include what was on the account before the month started (plus <b>or</b> minus) in <b>Left to spend</b>",
+  "carry.note": "Uses the account balance from your Volksbank import, so Left to spend matches your bank. Example: at +120 € before payday, those 120 € are added; at −400 €, 400 € of the salary just covers the overdraft.",
+  "set.cats": "Your categories",
+  "set.newCat": "＋ New category",
+  "ccat.empty": "No custom categories yet. Add one here or with “＋ New” when you log an entry.",
+  "entries_one": "1 entry",
+  "entries_other": "{n} entries",
+  "set.save": "☁️ &nbsp;Save backup to iCloud Drive / Files",
+  "set.copy": "⧉ &nbsp;Copy backup (to move your data)",
+  "set.paste": "⇣ &nbsp;Restore from copied backup",
+  "set.csv": "⤓ &nbsp;Export transactions (CSV)",
+  "set.import": "🏦 &nbsp;Import bank statement (CSV)",
+  "set.importBackup": "⤒ &nbsp;Import backup",
+  "set.demo": "✦ &nbsp;Load demo data",
+  "set.clear": "🧹 &nbsp;Clear entries only (keep categories &amp; settings)",
+  "set.fresh": "✕ &nbsp;Start fresh (erase everything)",
+  "set.note": "{n} stored on this device{inst}. {perm}Last backup: {last}. Lumen version {v}.",
+  "set.inst": " (installed app)",
+  "set.perm": "Storage is marked permanent. ",
+  "set.never": "never",
+  "paste.title": "Restore <em>backup</em>",
+  "paste.help": "Paste the text you copied with <b>Copy backup</b>. This replaces everything currently in the app.",
+  "paste.go": "Restore",
+  "t.amount": "Enter an amount above zero",
+  "t.entryUpd": "Entry updated",
+  "t.incLogged": "+{a} income logged",
+  "t.expLogged": "{a} expense logged",
+  "t.entryDel": "Entry deleted",
+  "t.undo": "Undo",
+  "t.goalUpd": "Goal updated",
+  "t.goalNew": "Goal created",
+  "t.removed": "Removed “{n}”",
+  "t.funded": "“{n}” fully funded!",
+  "t.fundAdded": "{a} added to {n}",
+  "t.bkSaved": "Backup saved",
+  "t.bkDown": "Backup downloaded",
+  "t.bkCopied": "Backup copied. Paste it into the installed app",
+  "t.selectCopy": "Select all and copy this text",
+  "t.badText": "That text isn’t a complete Lumen backup",
+  "t.restored": "Backup restored · {n}",
+  "t.csv": "CSV downloaded",
+  "t.badFile": "That file doesn’t look like a Lumen backup",
+  "t.demo": "Demo data loaded",
+  "t.cleared": "Cleared {n}",
+  "t.fresh": "Fresh start",
+  "t.catName": "Give the category a name",
+  "t.catUpd": "Category updated",
+  "t.catAdded": "“{n}” added",
+  "t.catDelMoved": "Deleted · {n} moved to Other",
+  "t.catDel": "Category deleted",
+  "t.light": "Light mode",
+  "t.dark": "Dark mode",
+  "arm.demo": "Tap again to replace your data with demo data",
+  "arm.clear": "Tap again to clear all entries and goals",
+  "arm.fresh": "Tap again to erase everything (can’t be undone)",
+  "arm.del": "Tap again to delete",
+  "bb.title": "Time for your monthly backup",
+  "bb.ago": "Last backup {n} days ago.",
+  "bb.never": "You haven’t made a backup yet.",
+  "bb.body": "Save one to iCloud Drive so your history is safe even if you lose your phone.",
+  "bb.later": "Later",
+  "bb.now": "Back up now",
+  "lang.changed": "Language: English",
+  "cat.salary": "Salary",
+  "cat.freelance": "Freelance",
+  "cat.business": "Side business",
+  "cat.invest": "Dividends",
+  "cat.gift": "Gifts",
+  "cat.other_in": "Other",
+  "cat.housing": "Housing",
+  "cat.groceries": "Groceries",
+  "cat.utilities": "Utilities",
+  "cat.transport": "Transport",
+  "cat.health": "Health",
+  "cat.dining": "Dining out",
+  "cat.shopping": "Shopping",
+  "cat.fun": "Entertainment",
+  "cat.travel": "Travel",
+  "cat.subs": "Subscriptions",
+  "cat.savings": "Savings",
+  "cat.investing": "Investing",
+  "cat.debt": "Debt payoff",
+  "cat.insurance": "Insurance",
+  "cat.cash": "Cash",
+  "cat.other_out": "Other"
+  },
+  "de": {
+  "nav.add": "Eintrag hinzufügen",
+  "nav.prev": "Vorheriger Monat",
+  "nav.next": "Nächster Monat",
+  "nav.theme": "Hell oder dunkel",
+  "nav.settings": "Einstellungen",
+  "nav.lang": "Sprache",
+  "tab.home": "Start",
+  "tab.plan": "Plan",
+  "tab.activity": "Aktivität",
+  "tab.trends": "Trends",
+  "tab.goals": "Ziele",
+  "hero.left": "Diesen Monat noch verfügbar",
+  "stat.income": "Einnahmen",
+  "stat.spent": "Ausgegeben",
+  "stat.saved": "Gespart & investiert",
+  "stat.overdue": "inkl. {a} Dispo-Ausgleich",
+  "greet.morning": "Guten Morgen",
+  "greet.afternoon": "Guten Tag",
+  "greet.evening": "Guten Abend",
+  "head.blank": "Ein leeres Blatt.",
+  "head.rebalance": "Zeit zum Ausgleichen.",
+  "head.thriving": "Du bist auf Kurs.",
+  "head.balanced": "Schön ausgeglichen.",
+  "head.counts": "Jeder Euro zählt.",
+  "sub.text": "Du hast {inc} eingenommen und {p}% davon eine Aufgabe gegeben. {rest}",
+  "sub.ok": "Der Rest ist Spielraum.",
+  "sub.bad": "Die Ausgaben sind höher als die Einnahmen. Schauen wir, wo.",
+  "sub.empty": "Füge deine erste Einnahme hinzu, um zu planen. Jeder Euro bekommt eine Aufgabe.",
+  "day.n": "Tag {n}",
+  "day.closed": "Abgeschlossen",
+  "day.upcoming": "Demnächst",
+  "day.back": "Rückblick",
+  "day.ahead": "Vorausplanen",
+  "day.period": "noch {n} Tage · {a} – {b}",
+  "day.month": "noch {n} Tage im {m}",
+  "delta.vs": "{arrow} {amt} ggü. {m}",
+  "bank.balance": "Kontostand",
+  "bank.neg": "Inkl. <b>{a}</b> Dispo von vor dem Zahltag",
+  "bank.pos": "Inkl. <b>+{a}</b> Übertrag von vor dem Zahltag",
+  "ring.title": "Sparquote",
+  "ring.cap": "vom Einkommen behalten",
+  "days_one": "1 Tag",
+  "days_other": "{n} Tage",
+  "ins.od": "Diesen Monat <b>{d}</b> im Dispo (tiefster Stand {low}). Dispozinsen sind teuer.",
+  "ins.over": "<b>{b}</b> liegt {a} über dem {p}%-Anteil.",
+  "ins.near": "<b>{p}%</b> von {b} verbraucht, noch {d} Tage.",
+  "ins.future": "Zukunftsziel erreicht: <b>{a}</b> gespart & investiert.",
+  "ins.up": "{c} ist <b>{a} höher</b> als letzten Monat.",
+  "ins.down": "{c} ist <b>{a} niedriger</b> als letzten Monat.",
+  "ins.perDay": "Du kannst noch etwa <b>{a} pro Tag</b> ausgeben.",
+  "ins.ok": "Alles im Plan. Gut gemacht.",
+  "ins.noIncome": "Erfasse deine Einnahmen, um Tipps zu sehen.",
+  "plan.title": "Einkommensplan · jeder Euro bekommt eine Aufgabe",
+  "plan.edit": "Aufteilung ändern",
+  "plan.done": "Fertig",
+  "plan.total": "Gesamt {n}%",
+  "plan.baseNeg": "Aufgeteilt werden <b>{b}</b> = {i} Einnahmen − {o} Dispo-Ausgleich",
+  "plan.basePos": "Aufgeteilt werden <b>{b}</b> = {i} Einnahmen + {c} Übertrag",
+  "plan.aggr": "Sparfuchs",
+  "plan.splitErr": "Die Aufteilung muss 100 % ergeben",
+  "od.name": "Dispo-Ausgleich",
+  "od.desc": "Dispo von vor dem Zahltag, bereits aus dem Einkommen dieses Monats bezahlt",
+  "od.covered": "Ausgeglichen <b>{a}</b>",
+  "od.was": "Kontostand war {a}",
+  "b.needs": "Bedarf",
+  "b.wants": "Wünsche",
+  "b.future": "Zukunft",
+  "b.needs.d": "Miete, Rechnungen, Lebensmittel, Mobilität",
+  "b.wants.d": "Essen gehen, Freizeit, Shopping, Reisen",
+  "b.future.d": "Sparen, Investieren, Schulden tilgen",
+  "bk.noIncome": "Füge Einnahmen hinzu, um diesen Topf zu füllen",
+  "bk.goalMet": "Ziel erreicht · {a} extra",
+  "bk.toSet": "noch {a} zurückzulegen",
+  "bk.over": "{a} über Budget",
+  "bk.left": "noch {a} verfügbar",
+  "bk.setAside": "Zurückgelegt",
+  "bk.spent": "Ausgegeben",
+  "bk.of": "von {a}",
+  "donut.title": "Woher das Geld kommt",
+  "donut.total": "Gesamteinnahmen",
+  "donut.src_one": "aus 1 Quelle",
+  "donut.src_other": "aus {n} Quellen",
+  "donut.none": "noch keine Einnahmen",
+  "donut.emptyT": "Noch nichts",
+  "donut.emptyB": "Füge eine Einnahme hinzu.",
+  "flow.title": "Geldfluss · letzte 6 Monate",
+  "tip.in": "Ein",
+  "tip.out": "Aus",
+  "tip.net": "Netto",
+  "cats.title": "Ausgaben nach Kategorie",
+  "cats.emptyT": "Alles ruhig",
+  "cats.emptyB": "Diesen Monat noch keine Ausgaben.",
+  "cats.show": "{n} ungenutzte zeigen",
+  "cats.hide": "{n} ungenutzte ausblenden",
+  "act.import": "Bank-CSV importieren",
+  "act.all": "Alle",
+  "act.expenses": "Ausgaben",
+  "act.search": "Suchen…",
+  "act.emptyT": "Hier ist nichts",
+  "act.noMatch": "Keine Treffer für deine Suche.",
+  "act.emptyB": "Drücke N oder tippe auf „Eintrag hinzufügen“.",
+  "act.shift": "bezahlt {d} · für {m}",
+  "act.odTag": "Konto stand vorher bei {a}",
+  "goals.title": "Sparziele",
+  "goals.add": "+ Einzahlen",
+  "goals.edit": "Bearbeiten",
+  "goals.new": "Neues Ziel",
+  "goals.of": "{a} von {b}",
+  "footer": "Lumen speichert alles in diesem Browser. Nichts verlässt dein Gerät. Drücke <span class=\"mono\">N</span>, um einen Eintrag hinzuzufügen.",
+  "tx.new": "Neuer <em>Eintrag</em>",
+  "tx.edit": "<em>Eintrag</em> bearbeiten",
+  "type.expense": "Ausgabe",
+  "type.income": "Einnahme",
+  "f.category": "Kategorie",
+  "f.desc": "Beschreibung",
+  "f.descPh": "z. B. Miete, Kundenrechnung…",
+  "f.date": "Datum",
+  "f.counts": "Zählt für",
+  "f.goal": "Auf Sparziel buchen",
+  "f.none": "— Keins —",
+  "f.auto": "Auto ({m})",
+  "btn.delete": "Löschen",
+  "btn.cancel": "Abbrechen",
+  "btn.save": "Speichern",
+  "btn.done": "Fertig",
+  "cat.newChip": "＋ Neu",
+  "cat.new": "Neue <em>Kategorie</em>",
+  "cat.editT": "<em>Kategorie</em> bearbeiten",
+  "f.name": "Name",
+  "f.namePh": "z. B. Haustiere, Fitness, Kinder",
+  "f.icon": "Symbol",
+  "f.color": "Farbe",
+  "goal.new": "Neues <em>Ziel</em>",
+  "goal.editT": "<em>Ziel</em> bearbeiten",
+  "goal.namePh": "Notgroschen, Japanreise…",
+  "goal.target": "Zielbetrag",
+  "goal.already": "Bereits gespart",
+  "goal.save": "Ziel speichern",
+  "fund.addTo": "Einzahlen auf",
+  "fund.note": "Dabei wird auch ein <b style=\"color:var(--text);font-weight:500\">Sparen</b>-Eintrag für den Monat angelegt, der zum Topf „Zukunft“ zählt.",
+  "fund.btn": "Einzahlen",
+  "imp.title": "<em>Kontoauszug</em> importieren",
+  "imp.help": "Funktioniert mit Exporten von <b>Volksbank / VR-Banking</b> (und den CSV-Dateien der meisten anderen Banken). Die Datei wird direkt hier im Browser gelesen und nie hochgeladen.<ol><li>Melde dich im Online-Banking auf <b>voba-oberberg.de</b> an (oder in der VR-Banking-App am Computer).</li><li>Öffne dein Konto, gehe zu <b>Umsätze</b> und wähle einen Zeitraum.</li><li>Wähle <b>Exportieren → CSV</b> und speichere die Datei.</li><li>Lege sie unten ab. Doppelte Umsätze werden übersprungen, überlappende Zeiträume sind also kein Problem.</li></ol>",
+  "imp.drop": "Lege deine <b>.csv</b> hier ab oder tippe zum Auswählen",
+  "imp.dropHint": "Auf dem iPhone heißt die Datei vielleicht nur „Daten“. Das passt, wähle sie aus.",
+  "imp.back": "← Andere Datei",
+  "imp.go": "Importieren",
+  "imp.overlay": "Bank-CSV hier ablegen zum Importieren",
+  "imp.pdf": "Das ist ein PDF. Bitte exportiere die Umsätze als CSV",
+  "imp.zip": "Das ist eine Excel-/ZIP-Datei. Bitte wähle den CSV-Export",
+  "imp.emptyFile": "Die Datei ist leer. Exportiere nochmal mit größerem Zeitraum",
+  "imp.noRowsFile": "In der Datei sind keine lesbaren Zeilen. Ist es der CSV-Export?",
+  "imp.col": "Spalte {n}",
+  "imp.fmt.vr": "Volksbank · VR-Banking-Export",
+  "imp.fmt.classic": "Volksbank · klassischer Export",
+  "imp.fmt.csv": "CSV-Datei",
+  "imp.bankTx": "Bankbuchung",
+  "imp.mapDate": "Datumsspalte",
+  "imp.mapAmount": "Betragsspalte",
+  "imp.mapPayee": "Beschreibung / Empfänger",
+  "imp.needMap": "Wähle Datums- und Betragsspalte aus",
+  "imp.noRows": "Die Datei hat Überschriften, aber keine Umsätze. Exportiere mit größerem Zeitraum",
+  "imp.new": "<b>{n}</b> neu",
+  "imp.dups": "<b>{n}</b> schon importiert",
+  "imp.balance": "🏦 Kontostand <b>{a}</b>",
+  "imp.dupTag": "schon importiert",
+  "imp.noneT": "Keine Umsätze gefunden",
+  "imp.chooseCols": "Wähle oben die Spalten aus.",
+  "imp.checkExport": "Prüfe, ob es ein Umsatz-Export ist.",
+  "imp.btn_one": "1 Umsatz importieren",
+  "imp.btn_other": "{n} Umsätze importieren",
+  "imp.update": "Kontostände aktualisieren",
+  "imp.cur": "Anzeigewährung auf {c} umstellen (aktuell {cur})",
+  "imp.done_one": "1 Umsatz importiert",
+  "imp.done_other": "{n} Umsätze importiert",
+  "imp.enriched": " · Kontostände bei {n} älteren ergänzt",
+  "imp.balAdded": "Kontostände bei {n} Einträgen ergänzt",
+  "set.title": "Einstellungen",
+  "set.language": "Sprache",
+  "set.appearance": "Darstellung",
+  "set.system": "System",
+  "set.light": "Hell",
+  "set.dark": "Dunkel",
+  "set.currency": "Währung",
+  "set.payday": "Zahltag",
+  "pd.check": "Gehalt am Monatsende finanziert den <b>nächsten</b> Monat",
+  "pd.day": "Zählt ab Tag als nächster Monat",
+  "pd.applies": "Gilt für",
+  "pd.salary": "Nur Gehalt",
+  "pd.all": "Alle Einnahmen",
+  "pd.lastDay": " (nur letzter Tag)",
+  "pd.what.salary": "Gehalt",
+  "pd.what.all": "Einkommen",
+  "pd.example": "Beispiel: {what} am {d}. {prev} startet das Budget für {cur}, und Ausgaben ab diesem Tag zählen auch zu {cur}. Einzelne Einnahmen kannst du durch Antippen anders zuordnen.",
+  "pd.off": "Einnahmen zählen zum Monat, in dem sie eingehen.",
+  "set.carry": "Übertrag",
+  "carry.check": "Kontostand vor Monatsbeginn (Plus <b>oder</b> Minus) bei <b>Noch verfügbar</b> einrechnen",
+  "carry.note": "Nutzt den Kontostand aus deinem Volksbank-Import, damit „Noch verfügbar“ zu deiner Bank passt. Beispiel: Bei +120 € vor dem Zahltag kommen 120 € dazu; bei −400 € deckt das Gehalt zuerst 400 € Dispo.",
+  "set.cats": "Deine Kategorien",
+  "set.newCat": "＋ Neue Kategorie",
+  "ccat.empty": "Noch keine eigenen Kategorien. Lege hier eine an oder mit „＋ Neu“ beim Erfassen.",
+  "entries_one": "1 Eintrag",
+  "entries_other": "{n} Einträge",
+  "set.save": "☁️ &nbsp;Backup in iCloud Drive / Dateien sichern",
+  "set.copy": "⧉ &nbsp;Backup kopieren (zum Umziehen der Daten)",
+  "set.paste": "⇣ &nbsp;Aus kopiertem Backup wiederherstellen",
+  "set.csv": "⤓ &nbsp;Buchungen exportieren (CSV)",
+  "set.import": "🏦 &nbsp;Kontoauszug importieren (CSV)",
+  "set.importBackup": "⤒ &nbsp;Backup importieren",
+  "set.demo": "✦ &nbsp;Beispieldaten laden",
+  "set.clear": "🧹 &nbsp;Nur Einträge löschen (Kategorien &amp; Einstellungen bleiben)",
+  "set.fresh": "✕ &nbsp;Neu starten (alles löschen)",
+  "set.note": "{n} auf diesem Gerät gespeichert{inst}. {perm}Letztes Backup: {last}. Lumen-Version {v}.",
+  "set.inst": " (installierte App)",
+  "set.perm": "Speicher ist dauerhaft markiert. ",
+  "set.never": "noch nie",
+  "paste.title": "<em>Backup</em> wiederherstellen",
+  "paste.help": "Füge den Text ein, den du mit <b>Backup kopieren</b> kopiert hast. Das ersetzt alles, was gerade in der App ist.",
+  "paste.go": "Wiederherstellen",
+  "t.amount": "Gib einen Betrag über null ein",
+  "t.entryUpd": "Eintrag aktualisiert",
+  "t.incLogged": "+{a} Einnahme erfasst",
+  "t.expLogged": "{a} Ausgabe erfasst",
+  "t.entryDel": "Eintrag gelöscht",
+  "t.undo": "Rückgängig",
+  "t.goalUpd": "Ziel aktualisiert",
+  "t.goalNew": "Ziel erstellt",
+  "t.removed": "„{n}“ entfernt",
+  "t.funded": "„{n}“ ist voll finanziert!",
+  "t.fundAdded": "{a} zu {n} hinzugefügt",
+  "t.bkSaved": "Backup gespeichert",
+  "t.bkDown": "Backup heruntergeladen",
+  "t.bkCopied": "Backup kopiert. Füge es in der installierten App ein",
+  "t.selectCopy": "Alles markieren und diesen Text kopieren",
+  "t.badText": "Dieser Text ist kein vollständiges Lumen-Backup",
+  "t.restored": "Backup wiederhergestellt · {n}",
+  "t.csv": "CSV heruntergeladen",
+  "t.badFile": "Diese Datei sieht nicht wie ein Lumen-Backup aus",
+  "t.demo": "Beispieldaten geladen",
+  "t.cleared": "{n} gelöscht",
+  "t.fresh": "Neustart",
+  "t.catName": "Gib der Kategorie einen Namen",
+  "t.catUpd": "Kategorie aktualisiert",
+  "t.catAdded": "„{n}“ hinzugefügt",
+  "t.catDelMoved": "Gelöscht · {n} nach „Sonstiges“ verschoben",
+  "t.catDel": "Kategorie gelöscht",
+  "t.light": "Heller Modus",
+  "t.dark": "Dunkler Modus",
+  "arm.demo": "Nochmal tippen, um deine Daten durch Beispieldaten zu ersetzen",
+  "arm.clear": "Nochmal tippen, um alle Einträge und Ziele zu löschen",
+  "arm.fresh": "Nochmal tippen, um alles endgültig zu löschen",
+  "arm.del": "Nochmal tippen zum Löschen",
+  "bb.title": "Zeit für dein monatliches Backup",
+  "bb.ago": "Letztes Backup vor {n} Tagen.",
+  "bb.never": "Du hast noch kein Backup gemacht.",
+  "bb.body": "Sichere eins in iCloud Drive, damit dein Verlauf auch bei Verlust des Handys sicher ist.",
+  "bb.later": "Später",
+  "bb.now": "Jetzt sichern",
+  "lang.changed": "Sprache: Deutsch",
+  "cat.salary": "Gehalt",
+  "cat.freelance": "Freiberuflich",
+  "cat.business": "Nebengewerbe",
+  "cat.invest": "Dividenden",
+  "cat.gift": "Geschenke",
+  "cat.other_in": "Sonstiges",
+  "cat.housing": "Wohnen",
+  "cat.groceries": "Lebensmittel",
+  "cat.utilities": "Nebenkosten",
+  "cat.transport": "Mobilität",
+  "cat.health": "Gesundheit",
+  "cat.dining": "Essen gehen",
+  "cat.shopping": "Shopping",
+  "cat.fun": "Freizeit",
+  "cat.travel": "Reisen",
+  "cat.subs": "Abos",
+  "cat.savings": "Sparen",
+  "cat.investing": "Investieren",
+  "cat.debt": "Schulden tilgen",
+  "cat.insurance": "Versicherungen",
+  "cat.cash": "Bargeld",
+  "cat.other_out": "Sonstiges"
+  },
+  "pt": {
+  "nav.add": "Adicionar",
+  "nav.prev": "Mês anterior",
+  "nav.next": "Próximo mês",
+  "nav.theme": "Alternar claro ou escuro",
+  "nav.settings": "Configurações",
+  "nav.lang": "Idioma",
+  "tab.home": "Início",
+  "tab.plan": "Plano",
+  "tab.activity": "Atividade",
+  "tab.trends": "Tendências",
+  "tab.goals": "Metas",
+  "hero.left": "Disponível para gastar este mês",
+  "stat.income": "Receitas",
+  "stat.spent": "Gasto",
+  "stat.saved": "Poupado e investido",
+  "stat.overdue": "inclui {a} em atraso",
+  "greet.morning": "Bom dia",
+  "greet.afternoon": "Boa tarde",
+  "greet.evening": "Boa noite",
+  "head.blank": "Uma página em branco.",
+  "head.rebalance": "Hora de reequilibrar.",
+  "head.thriving": "Você está arrasando.",
+  "head.balanced": "Bem equilibrado.",
+  "head.counts": "Cada euro conta.",
+  "sub.text": "Você recebeu {inc} e deu uma função a {p}% disso. {rest}",
+  "sub.ok": "O resto é folga.",
+  "sub.bad": "Os gastos passaram da renda. Vamos ver onde.",
+  "sub.empty": "Adicione sua primeira receita para começar. Cada euro ganha uma função.",
+  "day.n": "Dia {n}",
+  "day.closed": "Encerrado",
+  "day.upcoming": "Em breve",
+  "day.back": "Olhando para trás",
+  "day.ahead": "Planejando",
+  "day.period": "faltam {n} dias · {a} – {b}",
+  "day.month": "faltam {n} dias em {m}",
+  "delta.vs": "{arrow} {amt} vs. {m}",
+  "bank.balance": "Saldo bancário",
+  "bank.neg": "Inclui <b>{a}</b> de cheque especial anterior",
+  "bank.pos": "Inclui <b>+{a}</b> que sobrou antes do pagamento",
+  "ring.title": "Taxa de poupança",
+  "ring.cap": "da renda guardada",
+  "days_one": "1 dia",
+  "days_other": "{n} dias",
+  "ins.od": "<b>{d}</b> no cheque especial este mês (mínimo {low}). Os juros do cheque especial são caros.",
+  "ins.over": "<b>{b}</b> passou {a} da sua fatia de {p}%.",
+  "ins.near": "<b>{p}%</b> de {b} usado, faltando {d} dias.",
+  "ins.future": "Meta do futuro atingida: <b>{a}</b> poupado e investido.",
+  "ins.up": "{c} <b>subiu {a}</b> em relação ao mês passado.",
+  "ins.down": "{c} <b>caiu {a}</b> em relação ao mês passado.",
+  "ins.perDay": "Você pode gastar cerca de <b>{a}/dia</b> pelo resto do mês.",
+  "ins.ok": "Tudo nos trilhos. Bom trabalho.",
+  "ins.noIncome": "Registre sua renda para ver dicas.",
+  "plan.title": "Plano de renda · cada euro com uma função",
+  "plan.edit": "Editar divisão",
+  "plan.done": "Concluído",
+  "plan.total": "Total {n}%",
+  "plan.baseNeg": "Dividindo <b>{b}</b> = {i} de renda − {o} em atraso",
+  "plan.basePos": "Dividindo <b>{b}</b> = {i} de renda + {c} do saldo anterior",
+  "plan.aggr": "Poupador agressivo",
+  "plan.splitErr": "A divisão precisa somar 100%",
+  "od.name": "Em atraso",
+  "od.desc": "Cheque especial de antes do pagamento, já pago com a renda deste mês",
+  "od.covered": "Coberto <b>{a}</b>",
+  "od.was": "saldo era {a}",
+  "b.needs": "Necessidades",
+  "b.wants": "Desejos",
+  "b.future": "Futuro",
+  "b.needs.d": "Aluguel, contas, mercado, transporte",
+  "b.wants.d": "Restaurantes, lazer, compras, viagens",
+  "b.future.d": "Poupança, investimentos, quitar dívidas",
+  "bk.noIncome": "Adicione renda para abastecer este pote",
+  "bk.goalMet": "Meta atingida · {a} a mais",
+  "bk.toSet": "faltam {a} para guardar",
+  "bk.over": "{a} acima do orçamento",
+  "bk.left": "{a} disponíveis",
+  "bk.setAside": "Guardado",
+  "bk.spent": "Gasto",
+  "bk.of": "de {a}",
+  "donut.title": "De onde vem a renda",
+  "donut.total": "renda total",
+  "donut.src_one": "de 1 fonte",
+  "donut.src_other": "de {n} fontes",
+  "donut.none": "nenhuma renda ainda",
+  "donut.emptyT": "Nada ainda",
+  "donut.emptyB": "Adicione uma receita.",
+  "flow.title": "Fluxo de caixa · últimos 6 meses",
+  "tip.in": "Entrada",
+  "tip.out": "Saída",
+  "tip.net": "Saldo",
+  "cats.title": "Gastos por categoria",
+  "cats.emptyT": "Tudo calmo",
+  "cats.emptyB": "Nenhum gasto registrado este mês.",
+  "cats.show": "Mostrar {n} sem uso",
+  "cats.hide": "Ocultar {n} sem uso",
+  "act.import": "Importar CSV do banco",
+  "act.all": "Tudo",
+  "act.expenses": "Despesas",
+  "act.search": "Buscar…",
+  "act.emptyT": "Nada aqui",
+  "act.noMatch": "Nenhum resultado para a busca.",
+  "act.emptyB": "Pressione N ou toque em “Adicionar” para registrar algo.",
+  "act.shift": "pago em {d} · para {m}",
+  "act.odTag": "a conta estava em {a} antes",
+  "goals.title": "Metas de poupança",
+  "goals.add": "+ Adicionar",
+  "goals.edit": "Editar",
+  "goals.new": "Nova meta",
+  "goals.of": "{a} de {b}",
+  "footer": "O Lumen guarda tudo neste navegador. Nada sai do seu aparelho. Pressione <span class=\"mono\">N</span> para adicionar.",
+  "tx.new": "Novo <em>lançamento</em>",
+  "tx.edit": "Editar <em>lançamento</em>",
+  "type.expense": "Despesa",
+  "type.income": "Receita",
+  "f.category": "Categoria",
+  "f.desc": "Descrição",
+  "f.descPh": "ex.: Aluguel, Fatura de cliente…",
+  "f.date": "Data",
+  "f.counts": "Conta para",
+  "f.goal": "Destinar à meta",
+  "f.none": "— Nenhuma —",
+  "f.auto": "Auto ({m})",
+  "btn.delete": "Excluir",
+  "btn.cancel": "Cancelar",
+  "btn.save": "Salvar",
+  "btn.done": "OK",
+  "cat.newChip": "＋ Nova",
+  "cat.new": "Nova <em>categoria</em>",
+  "cat.editT": "Editar <em>categoria</em>",
+  "f.name": "Nome",
+  "f.namePh": "ex.: Pets, Academia, Filhos",
+  "f.icon": "Ícone",
+  "f.color": "Cor",
+  "goal.new": "Nova <em>meta</em>",
+  "goal.editT": "Editar <em>meta</em>",
+  "goal.namePh": "Reserva de emergência, viagem ao Japão…",
+  "goal.target": "Valor da meta",
+  "goal.already": "Já guardado",
+  "goal.save": "Salvar meta",
+  "fund.addTo": "Adicionar a",
+  "fund.note": "Isso também registra um lançamento de <b style=\"color:var(--text);font-weight:500\">Poupança</b> no mês, que conta para o pote Futuro.",
+  "fund.btn": "Adicionar valor",
+  "imp.title": "Importar <em>extrato</em>",
+  "imp.help": "Funciona com exportações do <b>Volksbank / VR-Banking</b> (e com os CSV da maioria dos outros bancos). O arquivo é lido aqui no navegador e nunca é enviado.<ol><li>Entre no internet banking em <b>voba-oberberg.de</b> (ou no app VR Banking no computador).</li><li>Abra sua conta, vá em <b>Umsätze</b> (lançamentos) e escolha um período.</li><li>Escolha <b>Exportieren → CSV</b> e salve o arquivo.</li><li>Solte-o abaixo. Duplicados são ignorados, então períodos sobrepostos não têm problema.</li></ol>",
+  "imp.drop": "Solte seu <b>.csv</b> aqui ou toque para escolher",
+  "imp.dropHint": "No iPhone o arquivo pode se chamar só “Daten”. Tudo bem, escolha ele.",
+  "imp.back": "← Outro arquivo",
+  "imp.go": "Importar",
+  "imp.overlay": "Solte o CSV do banco para importar",
+  "imp.pdf": "Isso é um PDF. Exporte os lançamentos como CSV",
+  "imp.zip": "Isso é um arquivo Excel/ZIP. Escolha a exportação em CSV",
+  "imp.emptyFile": "O arquivo está vazio. Exporte de novo com um período maior",
+  "imp.noRowsFile": "Não encontrei linhas legíveis. É a exportação em CSV?",
+  "imp.col": "Coluna {n}",
+  "imp.fmt.vr": "Volksbank · exportação VR-Banking",
+  "imp.fmt.classic": "Volksbank · exportação clássica",
+  "imp.fmt.csv": "Arquivo CSV",
+  "imp.bankTx": "Lançamento bancário",
+  "imp.mapDate": "Coluna da data",
+  "imp.mapAmount": "Coluna do valor",
+  "imp.mapPayee": "Descrição / favorecido",
+  "imp.needMap": "Escolha as colunas de data e valor",
+  "imp.noRows": "O arquivo tem cabeçalhos mas nenhum lançamento. Exporte com um período maior",
+  "imp.new": "<b>{n}</b> novos",
+  "imp.dups": "<b>{n}</b> já importados",
+  "imp.balance": "🏦 Saldo <b>{a}</b>",
+  "imp.dupTag": "já importado",
+  "imp.noneT": "Nenhum lançamento encontrado",
+  "imp.chooseCols": "Escolha as colunas acima.",
+  "imp.checkExport": "Confira se é uma exportação de lançamentos (Umsätze).",
+  "imp.btn_one": "Importar 1 lançamento",
+  "imp.btn_other": "Importar {n} lançamentos",
+  "imp.update": "Atualizar saldos",
+  "imp.cur": "Mudar a moeda para {c} (atual: {cur})",
+  "imp.done_one": "1 lançamento importado",
+  "imp.done_other": "{n} lançamentos importados",
+  "imp.enriched": " · saldos adicionados a {n} antigos",
+  "imp.balAdded": "Saldos adicionados a {n} lançamentos",
+  "set.title": "Configurações",
+  "set.language": "Idioma",
+  "set.appearance": "Aparência",
+  "set.system": "Sistema",
+  "set.light": "Claro",
+  "set.dark": "Escuro",
+  "set.currency": "Moeda",
+  "set.payday": "Dia do pagamento",
+  "pd.check": "Salário pago no fim do mês banca o <b>próximo</b> mês",
+  "pd.day": "Conta como próximo mês a partir do dia",
+  "pd.applies": "Vale para",
+  "pd.salary": "Só salário",
+  "pd.all": "Todas as receitas",
+  "pd.lastDay": " (só o último dia)",
+  "pd.what.salary": "salário",
+  "pd.what.all": "renda",
+  "pd.example": "Exemplo: {what} recebido em {d} de {prev} inicia o orçamento de {cur}, e os gastos a partir desse dia também contam para {cur}. Você pode mudar uma receita específica tocando nela.",
+  "pd.off": "A receita conta para o mês em que entra.",
+  "set.carry": "Saldo anterior",
+  "carry.check": "Incluir o saldo da conta antes do início do mês (positivo <b>ou</b> negativo) em <b>Disponível</b>",
+  "carry.note": "Usa o saldo importado do Volksbank, para que o Disponível bata com o banco. Exemplo: com +120 € antes do pagamento, esses 120 € são somados; com −400 €, 400 € do salário só cobrem o cheque especial.",
+  "set.cats": "Suas categorias",
+  "set.newCat": "＋ Nova categoria",
+  "ccat.empty": "Nenhuma categoria própria ainda. Crie uma aqui ou com “＋ Nova” ao registrar algo.",
+  "entries_one": "1 lançamento",
+  "entries_other": "{n} lançamentos",
+  "set.save": "☁️ &nbsp;Salvar backup no iCloud Drive / Arquivos",
+  "set.copy": "⧉ &nbsp;Copiar backup (para mover seus dados)",
+  "set.paste": "⇣ &nbsp;Restaurar backup copiado",
+  "set.csv": "⤓ &nbsp;Exportar lançamentos (CSV)",
+  "set.import": "🏦 &nbsp;Importar extrato (CSV)",
+  "set.importBackup": "⤒ &nbsp;Importar backup",
+  "set.demo": "✦ &nbsp;Carregar dados de exemplo",
+  "set.clear": "🧹 &nbsp;Apagar só lançamentos (manter categorias e ajustes)",
+  "set.fresh": "✕ &nbsp;Recomeçar (apagar tudo)",
+  "set.note": "{n} salvos neste aparelho{inst}. {perm}Último backup: {last}. Versão do Lumen {v}.",
+  "set.inst": " (app instalado)",
+  "set.perm": "O armazenamento é permanente. ",
+  "set.never": "nunca",
+  "paste.title": "Restaurar <em>backup</em>",
+  "paste.help": "Cole o texto copiado com <b>Copiar backup</b>. Isso substitui tudo o que está no app.",
+  "paste.go": "Restaurar",
+  "t.amount": "Digite um valor acima de zero",
+  "t.entryUpd": "Lançamento atualizado",
+  "t.incLogged": "+{a} de receita registrado",
+  "t.expLogged": "{a} de despesa registrado",
+  "t.entryDel": "Lançamento excluído",
+  "t.undo": "Desfazer",
+  "t.goalUpd": "Meta atualizada",
+  "t.goalNew": "Meta criada",
+  "t.removed": "“{n}” removida",
+  "t.funded": "“{n}” totalmente financiada!",
+  "t.fundAdded": "{a} adicionado a {n}",
+  "t.bkSaved": "Backup salvo",
+  "t.bkDown": "Backup baixado",
+  "t.bkCopied": "Backup copiado. Cole no app instalado",
+  "t.selectCopy": "Selecione tudo e copie este texto",
+  "t.badText": "Esse texto não é um backup completo do Lumen",
+  "t.restored": "Backup restaurado · {n}",
+  "t.csv": "CSV baixado",
+  "t.badFile": "Esse arquivo não parece um backup do Lumen",
+  "t.demo": "Dados de exemplo carregados",
+  "t.cleared": "{n} apagados",
+  "t.fresh": "Recomeço",
+  "t.catName": "Dê um nome à categoria",
+  "t.catUpd": "Categoria atualizada",
+  "t.catAdded": "“{n}” adicionada",
+  "t.catDelMoved": "Excluída · {n} movidos para Outros",
+  "t.catDel": "Categoria excluída",
+  "t.light": "Modo claro",
+  "t.dark": "Modo escuro",
+  "arm.demo": "Toque de novo para trocar seus dados pelos de exemplo",
+  "arm.clear": "Toque de novo para apagar lançamentos e metas",
+  "arm.fresh": "Toque de novo para apagar tudo (sem volta)",
+  "arm.del": "Toque de novo para excluir",
+  "bb.title": "Hora do backup mensal",
+  "bb.ago": "Último backup há {n} dias.",
+  "bb.never": "Você ainda não fez um backup.",
+  "bb.body": "Salve um no iCloud Drive para seu histórico ficar seguro mesmo se perder o celular.",
+  "bb.later": "Depois",
+  "bb.now": "Fazer backup",
+  "lang.changed": "Idioma: Português",
+  "cat.salary": "Salário",
+  "cat.freelance": "Freelance",
+  "cat.business": "Negócio paralelo",
+  "cat.invest": "Dividendos",
+  "cat.gift": "Presentes",
+  "cat.other_in": "Outros",
+  "cat.housing": "Moradia",
+  "cat.groceries": "Mercado",
+  "cat.utilities": "Contas da casa",
+  "cat.transport": "Transporte",
+  "cat.health": "Saúde",
+  "cat.dining": "Restaurantes",
+  "cat.shopping": "Compras",
+  "cat.fun": "Lazer",
+  "cat.travel": "Viagens",
+  "cat.subs": "Assinaturas",
+  "cat.savings": "Poupança",
+  "cat.investing": "Investimentos",
+  "cat.debt": "Quitar dívidas",
+  "cat.insurance": "Seguros",
+  "cat.cash": "Dinheiro",
+  "cat.other_out": "Outros"
+  }
+  };
+  const LOCALES = { en: 'en-GB', de: 'de-DE', pt: 'pt-BR' };
+  const FLAGS = { en: '🇬🇧', de: '🇩🇪', pt: '🇧🇷' };
+  let lang = (() => {
+    try {
+      const saved = localStorage.getItem('lumen-lang'); if (saved && I18N[saved]) return saved;
+      if (localStorage.getItem('lumen-budget-v1')) return 'en';  // existing users keep English until they switch
+    } catch (e) {}
+    const nav = (navigator.language || '').toLowerCase();
+    return nav.startsWith('de') ? 'de' : nav.startsWith('pt') ? 'pt' : 'en';
+  })();
+  const loc = () => LOCALES[lang];
+  function t(key, vars) {
+    const str = (I18N[lang] && I18N[lang][key]) ?? I18N.en[key] ?? key;
+    return vars ? str.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '') : str;
+  }
+  const tr = t;  // alias for places where a local variable is also called t
+  const tp = (key, n, vars) => t(n === 1 ? key + '_one' : key + '_other', { n, ...(vars || {}) });
+
   /* ================= Config ================= */
   const CATS = {
     income: [
@@ -1016,9 +1905,19 @@
     { name: '70 / 20 / 10', v: [70, 20, 10] },
     { name: '50 / 20 / 30 · Aggressive saver', v: [50, 20, 30] },
   ];
+  function applyLangNames() {
+    [...CATS.income, ...CATS.expense].forEach(c => { if (!c.custom) c.name = t('cat.' + c.id); });
+    BUCKETS.forEach(b => { b.name = t('b.' + b.id); b.desc = t('b.' + b.id + '.d'); });
+    PRESETS[3].name = '50 / 20 / 30 · ' + t('plan.aggr');
+  }
+  function applyStatic() {
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  }
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.19';
+  const APP_VERSION = '1.20';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
@@ -1086,13 +1985,14 @@
     const cur = state.currency;
     const noDec = cur === 'JPY' || opts.compact;
     try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur, maximumFractionDigits: noDec ? 0 : 2, minimumFractionDigits: noDec ? 0 : 2, notation: opts.compact && Math.abs(n) >= 10000 ? 'compact' : 'standard' }).format(n);
+      return new Intl.NumberFormat(loc(), { style: 'currency', currency: cur, maximumFractionDigits: noDec ? 0 : 2, minimumFractionDigits: noDec ? 0 : 2, notation: opts.compact && Math.abs(n) >= 10000 ? 'compact' : 'standard' }).format(n);
     } catch (e) { return cur + ' ' + n.toFixed(2); }
   };
   const curSymbol = () => {
-    try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: state.currency }).formatToParts(0).find(p => p.type === 'currency').value; } catch (e) { return '€'; }
+    try { return new Intl.NumberFormat(loc(), { style: 'currency', currency: state.currency }).formatToParts(0).find(p => p.type === 'currency').value; } catch (e) { return '€'; }
   };
-  const monthName = (key, style = 'long') => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: style, ...(style === 'long' ? { year: 'numeric' } : {}) }); };
+  const monthOnly = key => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString(loc(), { month: 'long' }); };
+  const monthName = (key, style = 'long') => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString(loc(), { month: style, ...(style === 'long' ? { year: 'numeric' } : {}) }); };
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function animateNum(el, to, formatter) {
@@ -1208,55 +2108,56 @@
     const [vy, vm] = view.split('-').map(Number);
     const daysInMonth = new Date(vy, vm, 0).getDate();
 
-    document.getElementById('monthLabel').textContent = monthName(view);
+    const [ly, lm] = view.split('-').map(Number);
+    document.getElementById('monthLabel').innerHTML = `<span class="ml-long">${esc(monthName(view))}</span><span class="ml-short">${esc(new Date(ly, lm - 1, 1).toLocaleDateString(loc(), { month: 'short', year: 'numeric' }))}</span>`;
     document.querySelectorAll('#curSym, .cur-sym').forEach(el => el.textContent = curSymbol());
 
     // Hero copy
     const left = s.left;
     const hour = today.getHours();
-    const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    const greet = t(hour < 12 ? 'greet.morning' : hour < 18 ? 'greet.afternoon' : 'greet.evening');
     if (isCurrent) {
       const pStart = periodStart(view), nStart = periodStart(shiftMonth(view, 1));
-      const shortD = iso => new Date(iso + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-      document.getElementById('dayBadge').textContent = `Day ${dayDiff(pStart, isoDate(today)) + 1}`;
+      const shortD = iso => new Date(iso + 'T00:00').toLocaleDateString(loc(), { day: 'numeric', month: 'short' });
+      document.getElementById('dayBadge').textContent = t('day.n', { n: dayDiff(pStart, isoDate(today)) + 1 });
       document.getElementById('daysLeft').textContent = state.payday && state.payday.on && pStart !== view + '-01'
-        ? `${periodDaysLeft(view)} days left · ${shortD(pStart)} – ${shortD(isoDate(new Date(new Date(nStart + 'T00:00') - 864e5)))}`
-        : `${daysInMonth - today.getDate()} days left in ${monthName(view, 'long').split(' ')[0]}`;
+        ? t('day.period', { n: periodDaysLeft(view), a: shortD(pStart), b: shortD(isoDate(new Date(new Date(nStart + 'T00:00') - 864e5))) })
+        : t('day.month', { n: daysInMonth - today.getDate(), m: monthOnly(view) });
     } else {
-      document.getElementById('dayBadge').textContent = view < monthKey(today) ? 'Closed' : 'Upcoming';
-      document.getElementById('daysLeft').textContent = view < monthKey(today) ? 'Looking back' : 'Planning ahead';
+      document.getElementById('dayBadge').textContent = t(view < monthKey(today) ? 'day.closed' : 'day.upcoming');
+      document.getElementById('daysLeft').textContent = t(view < monthKey(today) ? 'day.back' : 'day.ahead');
     }
     const headline = document.getElementById('headline');
     const rate = s.income ? (s.saved + Math.max(0, left)) / s.income : 0;
-    if (!s.income && !s.expense) headline.innerHTML = `${greet}. <em>A blank page.</em>`;
-    else if (left < 0) headline.innerHTML = `${greet}. <em>Time to rebalance.</em>`;
-    else if (rate >= .3) headline.innerHTML = `${greet}. <em>You're thriving.</em>`;
-    else if (rate >= .15) headline.innerHTML = `${greet}. <em>Nicely balanced.</em>`;
-    else headline.innerHTML = `${greet}. <em>Every euro counts.</em>`;
+    if (!s.income && !s.expense) headline.innerHTML = `${greet}. <em>${t('head.blank')}</em>`;
+    else if (left < 0) headline.innerHTML = `${greet}. <em>${t('head.rebalance')}</em>`;
+    else if (rate >= .3) headline.innerHTML = `${greet}. <em>${t('head.thriving')}</em>`;
+    else if (rate >= .15) headline.innerHTML = `${greet}. <em>${t('head.balanced')}</em>`;
+    else headline.innerHTML = `${greet}. <em>${t('head.counts')}</em>`;
     document.getElementById('subline').textContent = s.income
-      ? `You've brought in ${fmt(s.income)} and given ${Math.round(Math.min(1, s.expense / s.income) * 100)}% of it a job. ${left >= 0 ? 'The rest is breathing room.' : 'Spending has outpaced income — let’s look at where.'}`
-      : 'Add your first income to start planning. Every euro gets a job.';
+      ? t('sub.text', { inc: fmt(s.income), p: Math.round(Math.min(1, s.expense / s.income) * 100), rest: t(left >= 0 ? 'sub.ok' : 'sub.bad') })
+      : t('sub.empty');
 
     animateNum(document.getElementById('balanceBig'), left, bigMoney);
     const bankRow = document.getElementById('bankRow');
     const pills = [];
     const bb = state.bankBalance;
-    if (bb) pills.push(`<span class="bank-pill ${bb.amount < 0 ? 'neg' : ''}">🏦 Bank balance <b>${fmt(bb.amount)}</b> · ${new Date(bb.date + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>`);
-    if (s.carry < 0) pills.push(`<span class="bank-pill neg">Includes <b>${fmt(s.carry)}</b> overdraft carried in</span>`);
-    else if (s.carry > 0) pills.push(`<span class="bank-pill">Includes <b>+${fmt(s.carry)}</b> carried over from before payday</span>`);
+    if (bb) pills.push(`<span class="bank-pill ${bb.amount < 0 ? 'neg' : ''}">🏦 ${t('bank.balance')} <b>${fmt(bb.amount)}</b> · ${new Date(bb.date + 'T00:00').toLocaleDateString(loc(), { day: 'numeric', month: 'short' })}</span>`);
+    if (s.carry < 0) pills.push(`<span class="bank-pill neg">${t('bank.neg', { a: fmt(s.carry) })}</span>`);
+    else if (s.carry > 0) pills.push(`<span class="bank-pill">${t('bank.pos', { a: fmt(s.carry) })}</span>`);
     bankRow.innerHTML = pills.join(''); bankRow.hidden = !pills.length;
     animateNum(document.getElementById('statIncome'), s.income, n => esc(fmt(n)));
     const overdueAmt = s.carry < 0 ? -s.carry : 0;
     animateNum(document.getElementById('statExpense'), s.consumption + overdueAmt, n => esc(fmt(n)));
     const sen = document.getElementById('statExpenseNote');
-    sen.hidden = !overdueAmt; sen.textContent = overdueAmt ? `incl. ${fmt(overdueAmt)} overdue` : '';
+    sen.hidden = !overdueAmt; sen.textContent = overdueAmt ? t('stat.overdue', { a: fmt(overdueAmt) }) : '';
     animateNum(document.getElementById('statSaved'), s.saved, n => esc(fmt(n)));
     const delta = document.getElementById('balanceDelta');
     const prevLeft = prev.left;
     if (prev.income || prev.expense) {
       const diff = left - prevLeft;
       delta.className = 'delta ' + (diff >= 0 ? 'up' : 'down');
-      delta.textContent = `${diff >= 0 ? '↑' : '↓'} ${fmt(Math.abs(diff))} vs ${monthName(shiftMonth(view, -1), 'short')}`;
+      delta.textContent = t('delta.vs', { arrow: diff >= 0 ? '↑' : '↓', amt: fmt(Math.abs(diff)), m: monthName(shiftMonth(view, -1), 'short') });
       delta.style.display = '';
     } else delta.style.display = 'none';
 
@@ -1279,27 +2180,27 @@
   function renderInsights(s, prev, isCurrent, dim, today) {
     const out = [];
     const od = overdraftStats(view);
-    if (od && od.days) out.push({ ic: '🚨', bg: 'rgba(251,113,133,.15)', t: `In the overdraft for <b>${od.days} day${od.days === 1 ? '' : 's'}</b> this month (lowest ${fmt(od.low)}). Dispo interest is expensive.` });
+    if (od && od.days) out.push({ ic: '🚨', bg: 'rgba(251,113,133,.15)', t: t('ins.od', { d: tp('days', od.days), low: fmt(od.low) }) });
     const split = state.split;
     BUCKETS.forEach((b, i) => {
       if (b.id === 'future' || !s.income) return;
       const budget = s.base * split[i] / 100, used = s.byBucket[b.id];
-      if (used > budget) out.push({ ic: '⚠️', bg: 'rgba(251,191,36,.15)', t: `<b>${b.name}</b> is ${fmt(used - budget)} over its ${split[i]}% slice.` });
-      else if (isCurrent && used / budget > .8) out.push({ ic: '⏳', bg: 'rgba(251,191,36,.15)', t: `<b>${Math.round(used / budget * 100)}%</b> of ${b.name} used with ${periodDaysLeft(view)} days to go.` });
+      if (used > budget) out.push({ ic: '⚠️', bg: 'rgba(251,191,36,.15)', t: t('ins.over', { b: b.name, a: fmt(used - budget), p: split[i] }) });
+      else if (isCurrent && used / budget > .8) out.push({ ic: '⏳', bg: 'rgba(251,191,36,.15)', t: t('ins.near', { p: Math.round(used / budget * 100), b: b.name, d: periodDaysLeft(view) }) });
     });
     const futureTarget = s.base * split[2] / 100;
-    if (s.income && s.saved >= futureTarget) out.push({ ic: '🌱', bg: 'rgba(94,234,212,.15)', t: `Future-you goal hit: <b>${fmt(s.saved)}</b> saved & invested.` });
+    if (s.income && s.saved >= futureTarget) out.push({ ic: '🌱', bg: 'rgba(94,234,212,.15)', t: t('ins.future', { a: fmt(s.saved) }) });
     const exp = s.list.filter(t => t.type === 'expense' && CATS.expense.find(c => c.id === t.category)?.b !== 'future');
     const byCat = {}; exp.forEach(t => byCat[t.category] = (byCat[t.category] || 0) + t.amount);
     const prevByCat = {}; prev.list.filter(t => t.type === 'expense').forEach(t => prevByCat[t.category] = (prevByCat[t.category] || 0) + t.amount);
     let best = null;
     Object.keys(byCat).forEach(k => { if (prevByCat[k] && k !== 'housing') { const d = byCat[k] - prevByCat[k]; if (!best || Math.abs(d) > Math.abs(best.d)) best = { k, d }; } });
-    if (best && Math.abs(best.d) > 15) out.push({ ic: best.d > 0 ? '📈' : '📉', bg: best.d > 0 ? 'rgba(251,113,133,.15)' : 'rgba(94,234,212,.15)', t: `${catById(best.k).name} is <b>${best.d > 0 ? 'up' : 'down'} ${fmt(Math.abs(best.d))}</b> from last month.` });
+    if (best && Math.abs(best.d) > 15) out.push({ ic: best.d > 0 ? '📈' : '📉', bg: best.d > 0 ? 'rgba(251,113,133,.15)' : 'rgba(94,234,212,.15)', t: t(best.d > 0 ? 'ins.up' : 'ins.down', { c: esc(catById(best.k).name), a: fmt(Math.abs(best.d)) }) });
     if (isCurrent && s.left > 0) {
       const perDay = s.left / periodDaysLeft(view);
-      out.push({ ic: '☀️', bg: 'rgba(167,139,250,.18)', t: `You can spend about <b>${fmt(perDay)}/day</b> for the rest of the month.` });
+      out.push({ ic: '☀️', bg: 'rgba(167,139,250,.18)', t: t('ins.perDay', { a: fmt(perDay) }) });
     }
-    if (!out.length) out.push({ ic: '✨', bg: 'rgba(167,139,250,.18)', t: s.income ? 'Everything is on track. Nice work.' : 'Log your income to unlock insights.' });
+    if (!out.length) out.push({ ic: '✨', bg: 'rgba(167,139,250,.18)', t: t(s.income ? 'ins.ok' : 'ins.noIncome') });
     document.getElementById('insights').innerHTML = out.slice(0, 3).map(o => `<div class="insight"><span class="ic" style="background:${o.bg}">${o.ic}</span><span>${o.t}</span></div>`).join('');
   }
 
@@ -1308,9 +2209,9 @@
     const total = split.reduce((a, b) => a + b, 0);
     const card = document.getElementById('planCard');
     card.classList.toggle('editing', editingPlan);
-    document.getElementById('editPlan').textContent = editingPlan ? 'Done' : 'Edit split';
+    document.getElementById('editPlan').textContent = t(editingPlan ? 'plan.done' : 'plan.edit');
     const pt = document.getElementById('planTotal');
-    pt.textContent = editingPlan ? `Total ${total}%` : '';
+    pt.textContent = editingPlan ? t('plan.total', { n: total }) : '';
     pt.classList.toggle('bad', total !== 100);
 
     document.getElementById('presets').innerHTML = PRESETS.map((p, i) =>
@@ -1322,15 +2223,15 @@
       `<div data-seg="${i}" style="flex-basis:${split[i] / Math.max(total, 1) * share * 100}%;background:linear-gradient(90deg, ${b.c}, ${b.c}aa);box-shadow:0 0 14px ${b.c}88"></div>`).join('');
     const pb = document.getElementById('planBase');
     pb.hidden = !s.carry || !s.income;
-    pb.innerHTML = s.carry < 0 ? `Splitting <b>${fmt(s.base)}</b> = ${fmt(s.income)} income − ${fmt(overdue)} overdue`
-      : `Splitting <b>${fmt(s.base)}</b> = ${fmt(s.income)} income + ${fmt(s.carry)} carried over`;
+    pb.innerHTML = s.carry < 0 ? t('plan.baseNeg', { b: fmt(s.base), i: fmt(s.income), o: fmt(overdue) })
+      : t('plan.basePos', { b: fmt(s.base), i: fmt(s.income), c: fmt(s.carry) });
 
     const bucketsEl = document.getElementById('buckets');
     const existing = bucketsEl.querySelectorAll('.bucket');
     const overdueCard = overdue ? `<div class="bucket overdue" style="--c:var(--expense)">
-        <div class="top"><div class="name"><i></i>Overdue</div><div class="pctl">${s.income ? Math.round(overdue / s.income * 100) : 0}%</div></div>
-        <div class="desc">Overdraft from before payday, already paid from this month's income</div>
-        <div class="amt"><span>Covered <b>${fmt(overdue)}</b></span><span>${s.opening != null ? 'balance was ' + fmt(s.opening) : ''}</span></div>
+        <div class="top"><div class="name"><i></i>${t('od.name')}</div><div class="pctl">${s.income ? Math.round(overdue / s.income * 100) : 0}%</div></div>
+        <div class="desc">${t('od.desc')}</div>
+        <div class="amt"><span>${t('od.covered', { a: fmt(overdue) })}</span><span>${s.opening != null ? t('od.was', { a: fmt(s.opening) }) : ''}</span></div>
         <div class="meter over"><div data-w="100"></div></div>
       </div>` : '';
     const html = overdueCard + BUCKETS.map((b, i) => {
@@ -1338,13 +2239,13 @@
       const pct = budget ? used / budget : (used ? 1.01 : 0);
       const isFuture = b.id === 'future';
       const over = !isFuture && used > budget && budget > 0;
-      const leftTxt = !s.income ? 'Add income to fund this bucket'
-        : isFuture ? (used >= budget ? `Goal met · ${fmt(used - budget)} extra` : `${fmt(budget - used)} still to set aside`)
-        : over ? `${fmt(used - budget)} over budget` : `${fmt(budget - used)} left to spend`;
+      const leftTxt = !s.income ? t('bk.noIncome')
+        : isFuture ? (used >= budget ? t('bk.goalMet', { a: fmt(used - budget) }) : t('bk.toSet', { a: fmt(budget - used) }))
+        : over ? t('bk.over', { a: fmt(used - budget) }) : t('bk.left', { a: fmt(budget - used) });
       return `<div class="bucket" style="--c:${b.c}">
         <div class="top"><div class="name"><i></i>${b.name}</div><div class="pctl"><span data-pctl="${i}">${split[i]}</span>%</div></div>
         <div class="desc">${b.desc}</div>
-        <div class="amt"><span>${isFuture ? 'Set aside' : 'Spent'} <b>${fmt(used)}</b></span><span>of ${fmt(budget)}</span></div>
+        <div class="amt"><span>${t(isFuture ? 'bk.setAside' : 'bk.spent')} <b>${fmt(used)}</b></span><span>${t('bk.of', { a: fmt(budget) })}</span></div>
         <div class="meter ${over ? 'over' : ''}"><div data-w="${Math.min(100, pct * 100)}"></div></div>
         <div class="left" style="${over ? 'color:var(--expense)' : ''}">${leftTxt}</div>
         <input type="range" min="0" max="100" step="5" value="${split[i]}" data-slider="${i}" aria-label="${b.name} percent" />
@@ -1372,15 +2273,15 @@
     });
     svg.innerHTML = segs;
     const setCenter = (v, k) => { document.getElementById('donutV').textContent = v; document.getElementById('donutK').textContent = k; };
-    setCenter(fmt(total, { compact: true }), entries.length ? `from ${entries.length} source${entries.length > 1 ? 's' : ''}` : 'no income yet');
+    setCenter(fmt(total, { compact: true }), entries.length ? tp('donut.src', entries.length) : t('donut.none'));
     svg.querySelectorAll('.seg').forEach(el => {
       el.addEventListener('mouseenter', () => setCenter(fmt(by[el.dataset.k], { compact: true }), catById(el.dataset.k).name));
-      el.addEventListener('mouseleave', () => setCenter(fmt(total, { compact: true }), `from ${entries.length} source${entries.length > 1 ? 's' : ''}`));
+      el.addEventListener('mouseleave', () => setCenter(fmt(total, { compact: true }), tp('donut.src', entries.length)));
     });
     document.getElementById('donutLegend').innerHTML = entries.length ? entries.map(([k, v]) => {
       const c = catById(k);
-      return `<div class="row"><i style="background:${c.c};box-shadow:0 0 8px ${c.c}"></i><span>${c.e} ${c.name}</span><span>${fmt(v)}</span><span class="p">${Math.round(v / total * 100)}%</span></div>`;
-    }).join('') : `<div class="empty" style="padding:10px"><span class="serif">Nothing yet</span>Add an income entry.</div>`;
+      return `<div class="row"><i style="background:${c.c};box-shadow:0 0 8px ${c.c}"></i><span>${c.e} ${esc(c.name)}</span><span>${fmt(v)}</span><span class="p">${Math.round(v / total * 100)}%</span></div>`;
+    }).join('') : `<div class="empty" style="padding:10px"><span class="serif">${t('donut.emptyT')}</span>${t('donut.emptyB')}</div>`;
   }
 
   function renderBars() {
@@ -1390,7 +2291,7 @@
     const el = document.getElementById('bars');
     el.innerHTML = data.map(d => `<div class="col ${d.m === view ? 'current' : ''}">
       <div class="pair">
-        <div class="tip"><b>${monthName(d.m)}</b><div><span style="color:var(--income)">In</span><span>${fmt(d.inc)}</span></div><div><span style="color:var(--expense)">Out</span><span>${fmt(d.exp)}</span></div><div><span style="color:var(--muted)">Net</span><span>${fmt(d.inc - d.exp)}</span></div></div>
+        <div class="tip"><b>${monthName(d.m)}</b><div><span style="color:var(--income)">${t('tip.in')}</span><span>${fmt(d.inc)}</span></div><div><span style="color:var(--expense)">${t('tip.out')}</span><span>${fmt(d.exp)}</span></div><div><span style="color:var(--muted)">${t('tip.net')}</span><span>${fmt(d.inc - d.exp)}</span></div></div>
         <div class="bar inc" data-h="${d.inc / max * 100}"></div><div class="bar exp" data-h="${d.exp / max * 100}"></div>
       </div>
       <div class="m">${monthName(d.m, 'short')}</div></div>`).join('');
@@ -1407,8 +2308,8 @@
     const el = document.getElementById('cats');
     const row = (c, v) => `<button type="button" class="cat ${v ? '' : 'unused'}" data-catfilter="${c.id}" style="--c:${c.c}"><div class="line"><span><span class="e">${c.e}</span>${esc(c.name)}</span><span>${fmt(v)}${v ? ` <span class="muted">· ${s.expense ? Math.round(v / s.expense * 100) : 0}%</span>` : ''}</span></div>
         <div class="meter"><div data-w="${v / max * 100}"></div></div></button>`;
-    el.innerHTML = (entries.length ? entries.map(([k, v]) => row(catById(k), v)).join('') : `<div class="empty"><span class="serif">All quiet</span>No spending logged this month.</div>`)
-      + (unused.length ? `<button type="button" class="unused-toggle" id="unusedToggle">${showUnused ? 'Hide' : 'Show'} ${unused.length} unused</button>` + (showUnused ? unused.map(c => row(c, 0)).join('') : '') : '');
+    el.innerHTML = (entries.length ? entries.map(([k, v]) => row(catById(k), v)).join('') : `<div class="empty"><span class="serif">${t('cats.emptyT')}</span>${t('cats.emptyB')}</div>`)
+      + (unused.length ? `<button type="button" class="unused-toggle" id="unusedToggle">${t(showUnused ? 'cats.hide' : 'cats.show', { n: unused.length })}</button>` + (showUnused ? unused.map(c => row(c, 0)).join('') : '') : '');
     requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll('.meter div').forEach(d => d.style.width = d.dataset.w + '%')));
   }
   document.getElementById('cats').addEventListener('click', e => {
@@ -1427,19 +2328,19 @@
     if (txFilter !== 'all') list = list.filter(t => t.type === txFilter);
     if (txQuery) { const q = txQuery.toLowerCase(); list = list.filter(t => (t.note || '').toLowerCase().includes(q) || catById(t.category).name.toLowerCase().includes(q)); }
     const el = document.getElementById('txList');
-    if (!list.length) { el.innerHTML = `<div class="empty"><span class="serif">Nothing here</span>${txQuery ? 'No matches for your search.' : 'Press N or tap “Add entry” to log something.'}</div>`; return; }
+    if (!list.length) { el.innerHTML = `<div class="empty"><span class="serif">${t('act.emptyT')}</span>${t(txQuery ? 'act.noMatch' : 'act.emptyB')}</div>`; return; }
     const groups = {};
     list.forEach(t => (groups[t.date] = groups[t.date] || []).push(t));
     let i = 0;
     el.innerHTML = Object.entries(groups).map(([date, items]) => {
       const d = new Date(date + 'T00:00');
       const net = items.reduce((a, t) => a + (t.type === 'income' ? t.amount : -t.amount), 0);
-      return `<div class="tx-day"><span>${d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><span>${net >= 0 ? '+' : '−'}${fmt(Math.abs(net))}</span></div>` +
+      return `<div class="tx-day"><span>${d.toLocaleDateString(loc(), { weekday: 'short', month: 'short', day: 'numeric' })}</span><span>${net >= 0 ? '+' : '−'}${fmt(Math.abs(net))}</span></div>` +
         items.map(t => {
           const c = catById(t.category);
           return `<div class="tx" data-id="${t.id}" style="--c:${c.c};animation-delay:${Math.min(i++, 14) * 25}ms">
             <div class="e">${c.e}</div>
-            <div class="info"><div class="t">${esc(t.note || c.name)}</div><div class="s">${c.name}${t.type === 'expense' ? ' · ' + (BUCKETS.find(b => b.id === c.b)?.name || '') : ''}${t.type === 'income' && t.bal != null && t.bal - t.amount < 0 ? `<span class="od-tag">account was at ${fmt(t.bal - t.amount)} before</span>` : ''}${budgetMonthOf(t) !== t.date.slice(0, 7) ? `<span class="shift-tag">paid ${new Date(t.date + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} · for ${monthName(budgetMonthOf(t), 'long').split(' ')[0]}</span>` : ''}</div></div>
+            <div class="info"><div class="t">${esc(t.note || c.name)}</div><div class="s">${esc(c.name)}${t.type === 'expense' ? ' · ' + (BUCKETS.find(b => b.id === c.b)?.name || '') : ''}${t.type === 'income' && t.bal != null && t.bal - t.amount < 0 ? `<span class="od-tag">${tr('act.odTag', { a: fmt(t.bal - t.amount) })}</span>` : ''}${budgetMonthOf(t) !== t.date.slice(0, 7) ? `<span class="shift-tag">${tr('act.shift', { d: new Date(t.date + 'T00:00').toLocaleDateString(loc(), { day: 'numeric', month: 'short' }), m: monthOnly(budgetMonthOf(t)) })}</span>` : ''}</div></div>
             <div class="a ${t.type === 'income' ? 'inc' : ''}">${t.type === 'income' ? '+' : '−'}${fmt(t.amount)}</div>
             <button class="icon-btn del" data-del="${t.id}" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
           </div>`;
@@ -1458,10 +2359,10 @@
           <circle cx="50" cy="50" r="40" fill="none" stroke="${g.c}" stroke-width="9" stroke-linecap="round" stroke-dasharray="0 ${C}" data-dash="${C * p} ${C}" style="transition:stroke-dasharray 1.2s var(--ease);filter:drop-shadow(0 0 6px ${g.c})"/></svg>
           <div class="gp">${p >= 1 ? '🎉' : Math.round(p * 100) + '%'}</div></div>
         <div class="gn">${esc(g.name)}</div>
-        <div class="ga">${fmt(g.saved, { compact: true })} of ${fmt(g.target, { compact: true })}</div>
-        <div class="gact"><button data-fund="${g.id}">+ Add</button><button data-gedit="${g.id}">Edit</button></div>
+        <div class="ga">${t('goals.of', { a: fmt(g.saved, { compact: true }), b: fmt(g.target, { compact: true }) })}</div>
+        <div class="gact"><button data-fund="${g.id}">${t('goals.add')}</button><button data-gedit="${g.id}">${t('goals.edit')}</button></div>
       </div>`;
-    }).join('') + `<button class="goal add" id="addGoal"><span class="plus">+</span><span>New goal</span></button>`;
+    }).join('') + `<button class="goal add" id="addGoal"><span class="plus">+</span><span>${t('goals.new')}</span></button>`;
     requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll('[data-dash]').forEach(c => c.setAttribute('stroke-dasharray', c.dataset.dash))));
   }
 
@@ -1485,11 +2386,11 @@
   function renderCatGrid() {
     const cats = CATS[txType];
     if (!cats.find(c => c.id === txCat)) txCat = cats[0].id;
-    document.getElementById('catGrid').innerHTML = cats.map(c => `<button type="button" style="--c:${c.c}" class="${c.id === txCat ? 'on' : ''}" data-cat="${c.id}">${c.e} ${esc(c.name)}</button>`).join('') + `<button type="button" class="add-cat" data-newcat>＋ New</button>`;
+    document.getElementById('catGrid').innerHTML = cats.map(c => `<button type="button" style="--c:${c.c}" class="${c.id === txCat ? 'on' : ''}" data-cat="${c.id}">${c.e} ${esc(c.name)}</button>`).join('') + `<button type="button" class="add-cat" data-newcat>${t('cat.newChip')}</button>`;
     renderBm();
     const showGoal = txType === 'expense' && txCat === 'savings' && state.goals.length;
     document.getElementById('goalField').style.display = showGoal ? '' : 'none';
-    document.getElementById('fGoal').innerHTML = `<option value="">— None —</option>` + state.goals.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
+    document.getElementById('fGoal').innerHTML = `<option value="">${t('f.none')}</option>` + state.goals.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
   }
   let txBm = '';
   function renderBm() {
@@ -1499,9 +2400,9 @@
     field.style.display = '';
     const own = date.slice(0, 7), next = shiftMonth(own, 1);
     const autoM = autoShift({ type: 'income', category: txCat, date }) ? next : own;
-    const mn = k => monthName(k, 'long').split(' ')[0];
+    const mn = monthOnly;
     document.getElementById('fBm').innerHTML =
-      `<option value="">Auto (${mn(autoM)})</option><option value="same">${mn(own)}</option><option value="next">${mn(next)}</option>`;
+      `<option value="">${t('f.auto', { m: mn(autoM) })}</option><option value="same">${mn(own)}</option><option value="next">${mn(next)}</option>`;
     document.getElementById('fBm').value = txBm;
   }
   function openTx(t) {
@@ -1509,7 +2410,7 @@
     editingTx = t || null;
     txType = t ? t.type : 'expense';
     txCat = t ? t.category : null;
-    document.getElementById('txModalTitle').innerHTML = t ? 'Edit <em>entry</em>' : 'New <em>entry</em>';
+    document.getElementById('txModalTitle').innerHTML = tr(t ? 'tx.edit' : 'tx.new');
     document.getElementById('fAmount').value = t ? t.amount : '';
     document.getElementById('fNote').value = t ? (t.note || '') : '';
     const today = new Date();
@@ -1535,7 +2436,7 @@
   document.getElementById('txForm').addEventListener('submit', e => {
     e.preventDefault();
     const amount = Math.round(parseFloat(document.getElementById('fAmount').value) * 100) / 100;
-    if (!(amount > 0)) return toast('Enter an amount above zero', '⚠️');
+    if (!(amount > 0)) return toast(t('t.amount'), '⚠️');
     const data = { type: txType, category: txCat, amount, date: document.getElementById('fDate').value, note: document.getElementById('fNote').value.trim(), bm: txType === 'income' ? (document.getElementById('fBm').value || undefined) : undefined };
     if (editingTx) {
       if (editingTx.payee && editingTx.category !== data.category) { state.rules = state.rules || {}; state.rules[normPayee(editingTx.payee)] = data.category; }
@@ -1549,7 +2450,7 @@
     const k = budgetMonthOf(data);
     if (k !== view) view = k;
     save(); close(e.target); render();
-    toast(editingTx ? 'Entry updated' : (txType === 'income' ? `+${fmt(amount)} income logged` : `${fmt(amount)} expense logged`), txType === 'income' ? '💸' : '✓');
+    toast(editingTx ? t('t.entryUpd') : t(txType === 'income' ? 't.incLogged' : 't.expLogged', { a: fmt(amount) }), txType === 'income' ? '💸' : '✓');
   });
   document.getElementById('txDelete').addEventListener('click', e => {
     if (!editingTx) return;
@@ -1560,7 +2461,7 @@
     if (idx < 0) return;
     const [removed] = state.txns.splice(idx, 1);
     save(); render();
-    toast('Entry deleted', '🗑️', () => { state.txns.push(removed); save(); render(); });
+    toast(t('t.entryDel'), '🗑️', () => { state.txns.push(removed); save(); render(); });
   }
   document.getElementById('txList').addEventListener('click', e => {
     const del = e.target.closest('[data-del]');
@@ -1575,7 +2476,7 @@
 
   // Plan
   document.getElementById('editPlan').addEventListener('click', () => {
-    if (editingPlan && state.split.reduce((a, b) => a + b, 0) !== 100) return toast('Your split should add up to 100%', '⚠️');
+    if (editingPlan && state.split.reduce((a, b) => a + b, 0) !== 100) return toast(t('plan.splitErr'), '⚠️');
     editingPlan = !editingPlan; renderPlan(summary(view));
   });
   document.getElementById('presets').addEventListener('click', e => {
@@ -1589,7 +2490,7 @@
     // light update to keep the slider focused while dragging
     document.querySelector(`[data-pctl="${i}"]`).textContent = state.split[i];
     const total = state.split.reduce((a, b) => a + b, 0);
-    const pt = document.getElementById('planTotal'); pt.textContent = `Total ${total}%`; pt.classList.toggle('bad', total !== 100);
+    const pt = document.getElementById('planTotal'); pt.textContent = t('plan.total', { n: total }); pt.classList.toggle('bad', total !== 100);
     const sm = summary(view), od = sm.carry < 0 ? -sm.carry : 0, share = sm.base / Math.max(1, sm.base + od);
     document.querySelectorAll('#allocBar [data-seg]').forEach(d => d.style.flexBasis = state.split[+d.dataset.seg] / Math.max(total, 1) * share * 100 + '%');
   });
@@ -1602,7 +2503,7 @@
   }
   function openGoal(g) {
     editingGoal = g || null; gColor = g ? g.c : GOAL_COLORS[state.goals.length % GOAL_COLORS.length];
-    document.getElementById('goalModalTitle').innerHTML = g ? 'Edit <em>goal</em>' : 'New <em>goal</em>';
+    document.getElementById('goalModalTitle').innerHTML = t(g ? 'goal.editT' : 'goal.new');
     document.getElementById('gName').value = g ? g.name : '';
     document.getElementById('gTarget').value = g ? g.target : '';
     document.getElementById('gSaved').value = g ? g.saved : 0;
@@ -1615,7 +2516,7 @@
     const data = { name: document.getElementById('gName').value.trim(), target: +document.getElementById('gTarget').value, saved: +document.getElementById('gSaved').value || 0, c: gColor };
     if (!data.name || !(data.target > 0)) return;
     if (editingGoal) Object.assign(editingGoal, data); else state.goals.push({ id: uid(), ...data });
-    save(); close(e.target); renderGoals(); toast(editingGoal ? 'Goal updated' : 'Goal created', '🎯');
+    save(); close(e.target); renderGoals(); toast(t(editingGoal ? 't.goalUpd' : 't.goalNew'), '🎯');
   });
   document.getElementById('goals').addEventListener('click', e => {
     if (e.target.closest('#addGoal')) return openGoal();
@@ -1623,7 +2524,7 @@
     const del = e.target.closest('[data-gdel]');
     if (del) {
       const idx = state.goals.findIndex(g => g.id === del.dataset.gdel); const [g] = state.goals.splice(idx, 1);
-      save(); renderGoals(); return toast(`Removed “${g.name}”`, '🗑️', () => { state.goals.splice(idx, 0, g); save(); renderGoals(); });
+      save(); renderGoals(); return toast(t('t.removed', { n: g.name }), '🗑️', () => { state.goals.splice(idx, 0, g); save(); renderGoals(); });
     }
     const f = e.target.closest('[data-fund]');
     if (f) {
@@ -1644,8 +2545,8 @@
     const date = view === monthKey(today) ? isoDate(today) : isoDate(new Date(fy, fm, 0)); // last day of viewed month
     state.txns.push({ id: uid(), type: 'expense', category: 'savings', amount: amt, date, note: `→ ${fundingGoal.name}` });
     save(); close(e.target); render();
-    if (!wasDone && fundingGoal.saved >= fundingGoal.target) { toast(`“${fundingGoal.name}” fully funded!`, '🎉'); confetti(); }
-    else toast(`${fmt(amt)} added to ${fundingGoal.name}`, '🌱');
+    if (!wasDone && fundingGoal.saved >= fundingGoal.target) { toast(t('t.funded', { n: fundingGoal.name }), '🎉'); confetti(); }
+    else toast(t('t.fundAdded', { a: fmt(amt), n: fundingGoal.name }), '🌱');
   });
 
   // Settings
@@ -1654,15 +2555,15 @@
   function renderPayday() {
     const pd = state.payday;
     document.getElementById('pdOn').checked = pd.on;
-    document.getElementById('pdDay').innerHTML = Array.from({ length: 12 }, (_, i) => 20 + i).map(d => `<option value="${d}" ${d === pd.day ? 'selected' : ''}>${d}${d === 31 ? ' (last day only)' : ''}</option>`).join('');
+    document.getElementById('pdDay').innerHTML = Array.from({ length: 12 }, (_, i) => 20 + i).map(d => `<option value="${d}" ${d === pd.day ? 'selected' : ''}>${d}${d === 31 ? t('pd.lastDay') : ''}</option>`).join('');
     document.getElementById('pdScope').value = pd.scope;
     document.getElementById('pdOpts').style.opacity = pd.on ? 1 : .4;
     document.getElementById('pdOpts').style.pointerEvents = pd.on ? '' : 'none';
     const [y, m] = monthKey(new Date()).split('-').map(Number);
-    const prevName = new Date(y, m - 2, 1).toLocaleDateString(undefined, { month: 'long' }), curName = new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long' });
+    const prevName = new Date(y, m - 2, 1).toLocaleDateString(loc(), { month: 'long' }), curName = new Date(y, m - 1, 1).toLocaleDateString(loc(), { month: 'long' });
     document.getElementById('pdExample').textContent = pd.on
-      ? `Example: ${pd.scope === 'all' ? 'income' : 'salary'} received on ${prevName} ${Math.max(pd.day, 28)} starts ${curName}'s budget, and spending from that day on counts toward ${curName} too. You can override a single income entry by tapping it.`
-      : 'Income counts toward the month it arrives in.';
+      ? t('pd.example', { what: t(pd.scope === 'all' ? 'pd.what.all' : 'pd.what.salary'), prev: prevName, d: Math.max(pd.day, 28), cur: curName })
+      : t('pd.off');
   }
   ['pdOn', 'pdDay', 'pdScope'].forEach(id => document.getElementById(id).addEventListener('change', () => {
     state.payday = { on: document.getElementById('pdOn').checked, day: +document.getElementById('pdDay').value, scope: document.getElementById('pdScope').value };
@@ -1670,12 +2571,12 @@
   }));
   document.getElementById('openSettings').addEventListener('click', async () => {
     document.getElementById('sCurrency').value = state.currency; renderPayday(); renderCustomCatList(); document.getElementById('odCarry').checked = state.overdraftCarry !== false; open('settingsModal');
-    requestAnimationFrame(() => setSeg(document.getElementById('themeSeg'), getMode(), 'th'));
+    requestAnimationFrame(() => { setSeg(document.getElementById('themeSeg'), getMode(), 'th'); setSeg(document.getElementById('langSeg'), lang, 'lg'); });
     const note = document.getElementById('storeNote');
-    const last = state.lastBackup ? new Date(state.lastBackup).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : 'never';
+    const last = state.lastBackup ? new Date(state.lastBackup).toLocaleDateString(loc(), { day: 'numeric', month: 'long', year: 'numeric' }) : t('set.never');
     let persisted = false; try { persisted = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : false; } catch (e) {}
     const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-    note.textContent = `${state.txns.length} entries stored on this device${installed ? ' (installed app)' : ''}. ${persisted ? 'Storage is marked permanent. ' : ''}Last backup: ${last}. Lumen version ${APP_VERSION}.`;
+    note.textContent = t('set.note', { n: tp('entries', state.txns.length), inst: installed ? t('set.inst') : '', perm: persisted ? t('set.perm') : '', last, v: APP_VERSION });
   });
   document.getElementById('odCarry').addEventListener('change', e => { state.overdraftCarry = e.target.checked; save(); render(); });
   document.getElementById('sCurrency').addEventListener('change', e => { state.currency = e.target.value; state.currencyChosen = true; save(); render(); });
@@ -1688,26 +2589,26 @@
       const file = new File([json], name, { type: 'application/json' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Lumen backup' }); // iPhone: choose "Save to Files" → iCloud Drive
-        markBackedUp(); toast('Backup saved', '☁️'); return;
+        markBackedUp(); toast(t('t.bkSaved'), '☁️'); return;
       }
     } catch (err) { if (err && err.name === 'AbortError') return; }
-    download(name, json, 'application/json'); markBackedUp(); toast('Backup downloaded', '⤓');
+    download(name, json, 'application/json'); markBackedUp(); toast(t('t.bkDown'), '⤓');
   }
   document.getElementById('exportJson').addEventListener('click', saveBackup);
   document.getElementById('copyBackup').addEventListener('click', async e => {
     const json = JSON.stringify(state);
-    try { await navigator.clipboard.writeText(json); markBackedUp(); toast('Backup copied. Paste it into the installed app', '⧉'); }
-    catch (err) { open('pasteModal'); const t = document.getElementById('pasteText'); t.value = json; t.select(); toast('Select all and copy this text', '⧉'); }
+    try { await navigator.clipboard.writeText(json); markBackedUp(); toast(t('t.bkCopied'), '⧉'); }
+    catch (err) { open('pasteModal'); const ta = document.getElementById('pasteText'); ta.value = json; ta.select(); toast(t('t.selectCopy'), '⧉'); }
   });
   document.getElementById('pasteBackup').addEventListener('click', () => { document.getElementById('pasteText').value = ''; open('pasteModal'); setTimeout(() => document.getElementById('pasteText').focus(), 80); });
   document.getElementById('pasteGo').addEventListener('click', e => {
     try { restoreBackup(JSON.parse(document.getElementById('pasteText').value)); close(e.target); }
-    catch (err) { toast('That text isn’t a complete Lumen backup', '⚠️'); }
+    catch (err) { toast(t('t.badText'), '⚠️'); }
   });
   function restoreBackup(data) {
     if (!data || !Array.isArray(data.txns)) throw new Error('bad backup');
     state = { currency: (data.currency === 'USD' && !data.currencyChosen) ? 'EUR' : (data.currency || 'EUR'), currencyChosen: true, split: data.split || [50, 30, 20], txns: data.txns, goals: data.goals || [], rules: data.rules || {}, payday: data.payday || { on: true, day: 25, scope: 'salary' }, lastBackup: data.lastBackup, customCats: data.customCats || [], bankBalance: data.bankBalance || null, overdraftCarry: data.overdraftCarry };
-    save(); render(); renderBackupBanner(); toast(`Backup restored · ${data.txns.length} entries`, '✓');
+    save(); render(); renderBackupBanner(); toast(t('t.restored', { n: tp('entries', data.txns.length) }), '✓');
   }
   function renderBackupBanner() {
     const el = document.getElementById('backupBanner');
@@ -1717,8 +2618,8 @@
     const due = state.txns.length >= 10 && (!last || now - last > 30 * day) && !snoozed;
     el.hidden = !due;
     if (!due) return;
-    const ago = last ? `Last backup ${Math.round((now - last) / day)} days ago.` : 'You haven’t made a backup yet.';
-    el.innerHTML = `<span class="ic">☁️</span><div class="txt">Time for your monthly backup<small>${ago} Save one to iCloud Drive so your history is safe even if you lose your phone.</small></div>
+    const ago = last ? t('bb.ago', { n: Math.round((now - last) / day) }) : t('bb.never');
+    el.innerHTML = `<span class="ic">☁️</span><div class="txt">${t('bb.title')}<small>${ago} ${t('bb.body')}</small></div>
       <button class="btn btn-ghost" id="bbLater">Later</button><button class="btn btn-primary" id="bbNow">Back up now</button>`;
     document.getElementById('bbNow').onclick = saveBackup;
     document.getElementById('bbLater').onclick = () => { state.backupSnooze = new Date(now + 7 * day).toISOString(); save(); renderBackupBanner(); };
@@ -1726,14 +2627,14 @@
   document.getElementById('exportCsv').addEventListener('click', () => {
     const rows = [['date', 'type', 'category', 'amount', 'note']].concat(state.txns.slice().sort((a, b) => a.date.localeCompare(b.date)).map(t => [t.date, t.type, catById(t.category).name, t.amount, t.note || '']));
     download(`lumen-transactions-${isoDate(new Date())}.csv`, rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n'), 'text/csv');
-    toast('CSV downloaded', '⤓');
+    toast(t('t.csv'), '⤓');
   });
   document.getElementById('importJson').addEventListener('click', () => document.getElementById('importFile').click());
   document.getElementById('importFile').addEventListener('change', async e => {
     const f = e.target.files[0]; if (!f) return;
     try {
       restoreBackup(JSON.parse(await f.text()));
-    } catch (err) { toast('That file doesn’t look like a Lumen backup', '⚠️'); }
+    } catch (err) { toast(t('t.badFile'), '⚠️'); }
     e.target.value = '';
   });
   // Two-tap confirm (works everywhere, including sandboxed frames where confirm() is blocked)
@@ -1744,21 +2645,21 @@
     return false;
   }
   document.getElementById('loadDemo').addEventListener('click', e => {
-    if (!armed(e.currentTarget, 'Tap again to replace your data with demo data')) return;
-    state = demoState(); view = currentBudgetMonth(); save(); render(); close(e.target); toast('Demo data loaded', '✦');
+    if (!armed(e.currentTarget, t('arm.demo'))) return;
+    state = demoState(); view = currentBudgetMonth(); save(); render(); close(e.target); toast(t('t.demo'), '✦');
   });
   document.getElementById('clearEntries').addEventListener('click', e => {
-    if (!armed(e.currentTarget, 'Tap again to clear all entries and goals')) return;
+    if (!armed(e.currentTarget, t('arm.clear'))) return;
     const prev = { txns: state.txns, goals: state.goals };
     const n = prev.txns.length;
     const prevBank = state.bankBalance;
     state.txns = []; state.goals = []; state.bankBalance = null;
     save(); render(); renderBackupBanner(); renderCustomCatList();
-    toast(`Cleared ${n} entr${n === 1 ? 'y' : 'ies'}`, '🧹', () => { state.txns = prev.txns; state.goals = prev.goals; state.bankBalance = prevBank; save(); render(); renderCustomCatList(); });
+    toast(t('t.cleared', { n: tp('entries', n) }), '🧹', () => { state.txns = prev.txns; state.goals = prev.goals; state.bankBalance = prevBank; save(); render(); renderCustomCatList(); });
   });
   document.getElementById('clearAll').addEventListener('click', e => {
-    if (!armed(e.currentTarget, 'Tap again to erase everything (can’t be undone)')) return;
-    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [], rules: {}, payday: state.payday, customCats: [] }; view = currentBudgetMonth(); save(); render(); close(e.target); toast('Fresh start', '✓');
+    if (!armed(e.currentTarget, t('arm.fresh'))) return;
+    state = { currency: state.currency, split: [50, 30, 20], txns: [], goals: [], rules: {}, payday: state.payday, customCats: [] }; view = currentBudgetMonth(); save(); render(); close(e.target); toast(t('t.fresh'), '✓');
   });
 
   // Month nav
@@ -1786,12 +2687,12 @@
   // Toast
   let toastTimer;
   function toast(msg, icon = '✓', undo) {
-    const t = document.getElementById('toast');
-    t.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>${undo ? '<button class="chip" id="undoBtn" style="pointer-events:auto">Undo</button>' : ''}`;
-    t.style.pointerEvents = undo ? 'auto' : 'none';
-    t.classList.add('show');
-    if (undo) document.getElementById('undoBtn').onclick = () => { undo(); t.classList.remove('show'); };
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), undo ? 4500 : 2400);
+    const el = document.getElementById('toast');
+    el.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>${undo ? `<button class="chip" id="undoBtn" style="pointer-events:auto">${t('t.undo')}</button>` : ''}`;
+    el.style.pointerEvents = undo ? 'auto' : 'none';
+    el.classList.add('show');
+    if (undo) document.getElementById('undoBtn').onclick = () => { undo(); el.classList.remove('show'); };
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), undo ? 4500 : 2400);
   }
 
   // Confetti
@@ -1837,7 +2738,7 @@
     catType = c ? c.type : (fromTx ? txType : 'expense');
     catColor = c ? c.c : CAT_COLORS[(state.customCats.length * 3) % CAT_COLORS.length];
     catBucket = c && c.b ? c.b : 'wants';
-    document.getElementById('catModalTitle').innerHTML = c ? 'Edit <em>category</em>' : 'New <em>category</em>';
+    document.getElementById('catModalTitle').innerHTML = t(c ? 'cat.editT' : 'cat.new');
     document.getElementById('cName').value = c ? c.name : '';
     document.getElementById('cEmoji').value = c ? c.e : '';
     document.getElementById('catDelete').style.display = c ? '' : 'none';
@@ -1854,7 +2755,7 @@
   document.getElementById('catForm').addEventListener('submit', e => {
     e.preventDefault();
     const name = document.getElementById('cName').value.trim();
-    if (!name) return toast('Give the category a name', '⚠️');
+    if (!name) return toast(t('t.catName'), '⚠️');
     const data = { name, e: firstGlyph(document.getElementById('cEmoji').value) || '🏷️', c: catColor, type: catType, ...(catType === 'expense' ? { b: catBucket } : {}) };
     let id;
     if (catEdit) { const c = state.customCats.find(x => x.id === catEdit.id); Object.assign(c, data); if (c.type === 'income') delete c.b; id = c.id; }
@@ -1863,10 +2764,10 @@
     close(e.target);
     if (catFromTx && !catEdit) { txCat = id; renderCatGrid(); }
     render(); renderCustomCatList();
-    toast(catEdit ? 'Category updated' : `“${name}” added`, data.e);
+    toast(catEdit ? t('t.catUpd') : t('t.catAdded', { n: name }), data.e);
   });
   document.getElementById('catDelete').addEventListener('click', e => {
-    if (!catEdit || !armed(e.currentTarget, 'Tap again to delete')) return;
+    if (!catEdit || !armed(e.currentTarget, t('arm.del'))) return;
     const id = catEdit.id, fallback = catEdit.type === 'income' ? 'other_in' : 'other_out';
     let moved = 0;
     state.txns.forEach(t => { if (t.category === id) { t.category = fallback; moved++; } });
@@ -1874,7 +2775,7 @@
     state.customCats = state.customCats.filter(c => c.id !== id);
     if (txCat === id) txCat = null;
     syncCustomCats(); save(); close(e.target); render(); renderCustomCatList();
-    toast(moved ? `Deleted · ${moved} entr${moved === 1 ? 'y' : 'ies'} moved to Other` : 'Category deleted', '🗑️');
+    toast(moved ? t('t.catDelMoved', { n: tp('entries', moved) }) : t('t.catDel'), '🗑️');
   });
   function renderCustomCatList() {
     const el = document.getElementById('customCatList');
@@ -1882,8 +2783,8 @@
     const bucketName = id => (BUCKETS.find(b => b.id === id) || {}).name || '';
     el.innerHTML = list.length ? list.map(c => {
       const n = state.txns.filter(t => t.category === c.id).length;
-      return `<div class="ccat" style="--c:${c.c}"><span class="e">${c.e}</span><div class="n">${esc(c.name)}<small>${c.type === 'income' ? 'Income' : 'Expense · ' + bucketName(c.b)} · ${n} entr${n === 1 ? 'y' : 'ies'}</small></div><button type="button" data-editcat="${c.id}">Edit</button></div>`;
-    }).join('') : `<div class="ccat-empty">No custom categories yet. Add one here or with “＋ New” when you log an entry.</div>`;
+      return `<div class="ccat" style="--c:${c.c}"><span class="e">${c.e}</span><div class="n">${esc(c.name)}<small>${c.type === 'income' ? t('type.income') : t('type.expense') + ' · ' + bucketName(c.b)} · ${tp('entries', n)}</small></div><button type="button" data-editcat="${c.id}">${t('goals.edit')}</button></div>`;
+    }).join('') : `<div class="ccat-empty">${t('ccat.empty')}</div>`;
   }
   document.getElementById('customCatList').addEventListener('click', e => { const b = e.target.closest('[data-editcat]'); if (b) openCat(state.customCats.find(c => c.id === b.dataset.editcat)); });
   document.getElementById('addCatBtn').addEventListener('click', () => openCat(null, false));
@@ -1973,6 +2874,32 @@
   document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) goTab(b.dataset.go, { fromBar: true }); });
   window.addEventListener('resize', placeTabPill);
 
+  /* ================= Language switching ================= */
+  let booted = false;
+  function setLang(l) {
+    if (!I18N[l]) l = 'en';
+    lang = l;
+    try { localStorage.setItem('lumen-lang', l); } catch (e) {}
+    document.documentElement.lang = l === 'pt' ? 'pt-BR' : l;
+    document.getElementById('langFlag').textContent = FLAGS[l];
+    document.querySelectorAll('#langMenu [data-lang]').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
+    applyLangNames(); applyStatic();
+    if (!booted) return;
+    render(); renderBackupBanner();
+    if (document.getElementById('settingsModal').classList.contains('open')) { renderPayday(); renderCustomCatList(); }
+    requestAnimationFrame(() => {
+      setSeg(filterSeg, txFilter, 'f'); placeTabPill();
+      ['langSeg', 'themeSeg'].forEach(id => { const el = document.getElementById(id); if (el.offsetParent) setSeg(el, id === 'langSeg' ? lang : getMode(), id === 'langSeg' ? 'lg' : 'th'); });
+    });
+  }
+  const langMenu = document.getElementById('langMenu'), langBtn = document.getElementById('langBtn');
+  const toggleLangMenu = show => { langMenu.hidden = !show; langBtn.setAttribute('aria-expanded', show); };
+  langBtn.addEventListener('click', e => { e.stopPropagation(); toggleLangMenu(langMenu.hidden); });
+  langMenu.addEventListener('click', e => { const b = e.target.closest('[data-lang]'); if (!b) return; toggleLangMenu(false); if (b.dataset.lang !== lang) { setLang(b.dataset.lang); toast(t('lang.changed'), FLAGS[lang]); } });
+  document.addEventListener('click', e => { if (!langMenu.hidden && !e.target.closest('.lang-wrap')) toggleLangMenu(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleLangMenu(false); });
+  document.getElementById('langSeg').addEventListener('click', e => { const b = e.target.closest('[data-lg]'); if (!b || b.dataset.lg === lang) return; setLang(b.dataset.lg); setSeg(e.currentTarget, lang, 'lg'); });
+
   /* ================= Theme ================= */
   const themeMQ = matchMedia('(prefers-color-scheme: light)');
   const getMode = () => { try { return localStorage.getItem('lumen-theme') || 'system'; } catch (e) { return 'system'; } };
@@ -1995,7 +2922,7 @@
     const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = light ? '#f2f0f9' : '#07070c';
     const seg = document.getElementById('themeSeg'); if (seg && seg.offsetParent) setSeg(seg, getMode(), 'th');
   }
-  document.getElementById('themeToggle').addEventListener('click', () => { applyTheme(isLight() ? 'dark' : 'light'); toast(isLight() ? 'Light mode' : 'Dark mode', isLight() ? '☀️' : '🌙'); });
+  document.getElementById('themeToggle').addEventListener('click', () => { applyTheme(isLight() ? 'dark' : 'light'); toast(t(isLight() ? 't.light' : 't.dark'), isLight() ? '☀️' : '🌙'); });
   document.getElementById('themeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; applyTheme(b.dataset.th); setSeg(e.currentTarget, b.dataset.th, 'th'); });
   themeMQ.addEventListener && themeMQ.addEventListener('change', syncTheme);
   new MutationObserver(syncTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -2086,17 +3013,17 @@
     let text;
     try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { text = new TextDecoder('windows-1252').decode(buf); }
     text = text.replace(/^\uFEFF/, '');
-    if (/^%PDF/.test(text)) return toast('That’s a PDF. Please export the transactions as CSV instead', '⚠️');
-    if (/^PK\u0003\u0004/.test(text)) return toast('That’s an Excel/ZIP file. Please choose the CSV export', '⚠️');
-    if (!text.trim()) return toast('That file is empty. Try exporting again with a wider date range', '⚠️');
+    if (/^%PDF/.test(text)) return toast(t('imp.pdf'), '⚠️');
+    if (/^PK\u0003\u0004/.test(text)) return toast(t('imp.zip'), '⚠️');
+    if (!text.trim()) return toast(t('imp.emptyFile'), '⚠️');
     const firstLines = text.split(/\r?\n/).slice(0, 30).join('\n');
     const delim = [';', ',', '\t'].map(d => [d, (firstLines.match(new RegExp(d === '\t' ? '\t' : '\\' + d, 'g')) || []).length]).sort((a, b) => b[1] - a[1])[0][0];
     const rows = parseCSV(text, delim);
     // header row = first row that names a date column and has several cells
     let hi = rows.findIndex(r => r.length >= 3 && r.some(c => /buchungstag|buchungsdatum|^datum$|^date$|booking date|transaction date/i.test(c)));
     if (hi < 0) hi = rows.findIndex(r => r.length >= 3);
-    if (hi < 0) return toast('That file has no rows I can read. Is it the CSV export?', '⚠️');
-    const headers = rows[hi].map((h, i) => h || `Column ${i + 1}`);
+    if (hi < 0) return toast(t('imp.noRowsFile'), '⚠️');
+    const headers = rows[hi].map((h, i) => h || t('imp.col', { n: i + 1 }));
     const data = rows.slice(hi + 1).filter(r => r.length >= Math.min(3, headers.length));
     const map = {}; Object.keys(FIELD_RE).forEach(f => map[f] = findCol(headers, f));
     // Older VR format: amount followed by a Soll/Haben column holding S or H
@@ -2113,6 +3040,7 @@
     showImportStep(2);
   }
 
+  const fmtLabel = f => /VR-Banking/.test(f) ? t('imp.fmt.vr') : /classic/.test(f) ? t('imp.fmt.classic') : t('imp.fmt.csv');
   function buildImportRows() {
     const { data, map } = imp;
     const existing = new Set(state.txns.map(t => t.importKey).filter(Boolean));
@@ -2137,7 +3065,7 @@
       seen[base] = (seen[base] || 0) + 1;
       const key = `${base}#${seen[base]}`;
       const dup = existing.has(key);
-      const note = (payee || purpose || btext || 'Bank transaction').slice(0, 70);
+      const note = (payee || purpose || btext || t('imp.bankTx')).slice(0, 70);
       const balRaw = map.balance >= 0 ? parseAmount(r[map.balance]) : NaN;
       imp.rows.push({ date, amount: Math.round(Math.abs(amt) * 100) / 100, type, payee, purpose, btext, note, key, dup, include: !dup, category: autoCat(type, payee, purpose, btext), userCat: false, bal: isNaN(balRaw) ? null : balRaw, fileIdx: idx++ });
     });
@@ -2168,7 +3096,7 @@
     mapEl.hidden = !needMap && !imp.showMap;
     if (!mapEl.hidden) {
       const opt = f => `<option value="-1">—</option>` + headers.map((h, i) => `<option value="${i}" ${map[f] === i ? 'selected' : ''}>${esc(h)}</option>`).join('');
-      mapEl.innerHTML = [['date', 'Date column'], ['amount', 'Amount column'], ['payee', 'Description / payee']].map(([f, l]) =>
+      mapEl.innerHTML = [['date', t('imp.mapDate')], ['amount', t('imp.mapAmount')], ['payee', t('imp.mapPayee')]].map(([f, l]) =>
         `<div class="field" style="margin:0"><label for="map_${f}">${l}</label><select class="input" id="map_${f}" data-map="${f}">${opt(f)}</select></div>`).join('');
       imp.showMap = true;
     }
@@ -2178,26 +3106,26 @@
     const out = chosen.filter(r => r.type === 'expense').reduce((a, r) => a + r.amount, 0);
     const span = rows.length ? `${rows[rows.length - 1].date.split('-').reverse().join('.')} – ${rows[0].date.split('-').reverse().join('.')}` : '';
     const cur = imp.currency || state.currency;
-    const f2 = n => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(n); } catch (e) { return n.toFixed(2); } };
+    const f2 = n => { try { return new Intl.NumberFormat(loc(), { style: 'currency', currency: cur }).format(n); } catch (e) { return n.toFixed(2); } };
     document.getElementById('impSummary').innerHTML = needMap
-      ? `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip" style="color:var(--warn)">Pick the date and amount columns to continue</span>`
-      : !rows.length ? `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip" style="color:var(--warn)">The file has headings but no transactions. Export again with a wider date range</span>`
-      : `<span class="chip">📄 <b>${esc(imp.format)}</b></span><span class="chip"><b>${fresh.length}</b> new</span>${dups ? `<span class="chip"><b>${dups}</b> already imported</span>` : ''}${span ? `<span class="chip">${span}</span>` : ''}${imp.balance ? `<span class="chip" style="${imp.balance.amount < 0 ? 'color:var(--expense)' : ''}">🏦 Balance <b>${f2(imp.balance.amount)}</b></span>` : ''}<span class="chip" style="color:var(--income)">+${f2(inc)}</span><span class="chip" style="color:var(--expense)">−${f2(out)}</span>`;
+      ? `<span class="chip">📄 <b>${esc(fmtLabel(imp.format))}</b></span><span class="chip" style="color:var(--warn)">${t('imp.needMap')}</span>`
+      : !rows.length ? `<span class="chip">📄 <b>${esc(fmtLabel(imp.format))}</b></span><span class="chip" style="color:var(--warn)">${t('imp.noRows')}</span>`
+      : `<span class="chip">📄 <b>${esc(fmtLabel(imp.format))}</b></span><span class="chip">${t('imp.new', { n: fresh.length })}</span>${dups ? `<span class="chip">${t('imp.dups', { n: dups })}</span>` : ''}${span ? `<span class="chip">${span}</span>` : ''}${imp.balance ? `<span class="chip" style="${imp.balance.amount < 0 ? 'color:var(--expense)' : ''}">${t('imp.balance', { a: f2(imp.balance.amount) })}</span>` : ''}<span class="chip" style="color:var(--income)">+${f2(inc)}</span><span class="chip" style="color:var(--expense)">−${f2(out)}</span>`;
     document.getElementById('impList').innerHTML = rows.length ? rows.map((r, i) => `
       <div class="imp-row ${r.dup ? 'dup' : ''}">
         <input type="checkbox" data-inc="${i}" ${r.include ? 'checked' : ''} aria-label="Include" />
         <span class="d">${r.date.split('-').reverse().join('.')}</span>
-        <div class="p"><div>${esc(r.note)}${r.dup ? '<span class="tag">already imported</span>' : ''}</div><div>${esc([r.btext, r.purpose].filter(Boolean).join(' · ').slice(0, 90))}</div></div>
+        <div class="p"><div>${esc(r.note)}${r.dup ? `<span class="tag">${t('imp.dupTag')}</span>` : ''}</div><div>${esc([r.btext, r.purpose].filter(Boolean).join(' · ').slice(0, 90))}</div></div>
         <select class="input" data-cat="${i}" aria-label="Category">${CATS[r.type].map(c => `<option value="${c.id}" ${c.id === r.category ? 'selected' : ''}>${c.e} ${c.name}</option>`).join('')}</select>
         <span class="amt ${r.type === 'income' ? 'inc' : ''}">${r.type === 'income' ? '+' : '−'}${f2(r.amount)}</span>
-      </div>`).join('') : `<div class="empty"><span class="serif">No transactions found</span>${needMap ? 'Choose the columns above.' : 'Check that this is a transaction export (Umsätze).'}</div>`;
+      </div>`).join('') : `<div class="empty"><span class="serif">${t('imp.noneT')}</span>${t(needMap ? 'imp.chooseCols' : 'imp.checkExport')}</div>`;
     const go = document.getElementById('impGo');
     const enrichable = rows.some(r => r.dup && r.bal != null);
     go.hidden = false; go.disabled = !chosen.length && !enrichable; go.style.opacity = (chosen.length || enrichable) ? 1 : .5;
-    go.textContent = chosen.length ? `Import ${chosen.length} transaction${chosen.length === 1 ? '' : 's'}` : (enrichable ? 'Update balances' : 'Import 0 transactions');
+    go.textContent = chosen.length ? tp('imp.btn', chosen.length) : (enrichable ? t('imp.update') : tp('imp.btn', 0));
     const cw = document.getElementById('impCurWrap');
     cw.hidden = !(imp.currency && imp.currency !== state.currency);
-    document.getElementById('impCurLabel').textContent = `Switch display currency to ${imp.currency} (currently ${state.currency})`;
+    document.getElementById('impCurLabel').textContent = t('imp.cur', { c: imp.currency, cur: state.currency });
   }
 
   function showImportStep(n) {
@@ -2244,7 +3172,7 @@
     if (!document.getElementById('impCurWrap').hidden && document.getElementById('impCur').checked) state.currency = imp.currency;
     if (chosen.length) view = budgetMonthOf(state.txns[state.txns.length - chosen.length]);
     save(); close(e.target); render();
-    toast(chosen.length ? `Imported ${chosen.length} transactions${enriched ? ` · balances added to ${enriched} older ones` : ''}` : `Balances added to ${enriched} entries`, '🏦');
+    toast(chosen.length ? tp('imp.done', chosen.length) + (enriched ? t('imp.enriched', { n: enriched }) : '') : t('imp.balAdded', { n: enriched }), '🏦');
   });
   // Drop a CSV anywhere on the page
   let dragDepth = 0;
@@ -2271,8 +3199,10 @@
   if (!state.payday) { state.payday = { on: true, day: 25, scope: 'salary' }; save(); }
   try { view = currentBudgetMonth(); } catch (e) {}
   syncTheme();
+  setLang(lang);
   try { goTab(localStorage.getItem('lumen-tab') || 'home', { quiet: true }); } catch (e) { goTab('home', { quiet: true }); }
   render();
+  booted = true;
   renderBackupBanner();
   requestAnimationFrame(() => { setSeg(filterSeg, 'all', 'f'); placeTabPill(); });
   window.addEventListener('resize', () => setSeg(filterSeg, txFilter, 'f'));
