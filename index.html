@@ -369,6 +369,11 @@
   .cat .line .e { width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center; font-size: 13px; background: rgba(var(--ink),.06); }
   .cat .line .muted { color: var(--muted); }
   .cat .meter div { background: var(--c); }
+  button.cat { display: block; width: 100%; text-align: left; padding: 6px 8px; margin: -6px -8px; width: calc(100% + 16px); border-radius: 12px; transition: background .2s; -webkit-tap-highlight-color: transparent; }
+  button.cat:hover, button.cat:active { background: rgba(var(--ink), .05); }
+  .cat.unused { opacity: .5; }
+  @media (min-width: 721px) { .cats { max-height: 480px; overflow-y: auto; padding: 6px 8px 2px; margin: -6px -8px 0; scrollbar-width: thin; } }
+  .unused-toggle { align-self: flex-start; font-size: 13px; color: var(--accent-2); padding: 4px 0; }
 
   /* ---------- Goals ---------- */
   .goals { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
@@ -747,7 +752,7 @@
 
     <!-- Category spend -->
     <section data-tab="trends" class="glass card span-5 reveal" style="animation-delay:.36s">
-      <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--expense);box-shadow:0 0 10px var(--expense)"></span>Top spending</div></div>
+      <div class="card-head"><div class="card-title"><span class="dot" style="background:var(--expense);box-shadow:0 0 10px var(--expense)"></span>Spending by category</div></div>
       <div class="cats" id="cats"></div>
     </section>
 
@@ -1006,7 +1011,7 @@
   ];
   const GOAL_COLORS = ['#a78bfa', '#60a5fa', '#5eead4', '#f472b6', '#fbbf24', '#fb923c'];
   const KEY = 'lumen-budget-v1';
-  const APP_VERSION = '1.16';
+  const APP_VERSION = '1.17';
   const catById = id => [...CATS.income, ...CATS.expense].find(c => c.id === id) || { name: id, e: '•', c: '#94a3b8' };
 
   /* ================= State ================= */
@@ -1369,19 +1374,30 @@
     requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll('.bar').forEach((b, i) => { b.style.transitionDelay = (i * 40) + 'ms'; b.style.height = b.dataset.h + '%'; })));
   }
 
+  let showUnused = false;
   function renderCats(s) {
     const by = {};
     s.list.filter(t => t.type === 'expense').forEach(t => by[t.category] = (by[t.category] || 0) + t.amount);
-    const entries = Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const entries = Object.entries(by).sort((a, b) => b[1] - a[1]);
+    const unused = CATS.expense.filter(c => !by[c.id]);
     const max = entries[0]?.[1] || 1;
     const el = document.getElementById('cats');
-    el.innerHTML = entries.length ? entries.map(([k, v]) => {
-      const c = catById(k);
-      return `<div class="cat" style="--c:${c.c}"><div class="line"><span><span class="e">${c.e}</span>${c.name}</span><span>${fmt(v)} <span class="muted">· ${s.expense ? Math.round(v / s.expense * 100) : 0}%</span></span></div>
-        <div class="meter"><div data-w="${v / max * 100}"></div></div></div>`;
-    }).join('') : `<div class="empty"><span class="serif">All quiet</span>No spending logged this month.</div>`;
+    const row = (c, v) => `<button type="button" class="cat ${v ? '' : 'unused'}" data-catfilter="${c.id}" style="--c:${c.c}"><div class="line"><span><span class="e">${c.e}</span>${esc(c.name)}</span><span>${fmt(v)}${v ? ` <span class="muted">· ${s.expense ? Math.round(v / s.expense * 100) : 0}%</span>` : ''}</span></div>
+        <div class="meter"><div data-w="${v / max * 100}"></div></div></button>`;
+    el.innerHTML = (entries.length ? entries.map(([k, v]) => row(catById(k), v)).join('') : `<div class="empty"><span class="serif">All quiet</span>No spending logged this month.</div>`)
+      + (unused.length ? `<button type="button" class="unused-toggle" id="unusedToggle">${showUnused ? 'Hide' : 'Show'} ${unused.length} unused</button>` + (showUnused ? unused.map(c => row(c, 0)).join('') : '') : '');
     requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll('.meter div').forEach(d => d.style.width = d.dataset.w + '%')));
   }
+  document.getElementById('cats').addEventListener('click', e => {
+    if (e.target.closest('#unusedToggle')) { showUnused = !showUnused; return renderCats(summary(view)); }
+    const b = e.target.closest('[data-catfilter]'); if (!b) return;
+    // Tap a category to see its entries in Activity
+    const name = catById(b.dataset.catfilter).name;
+    txQuery = name; document.getElementById('txSearch').value = name;
+    txFilter = 'all'; setSeg(filterSeg, 'all', 'f');
+    renderTx(); goTab('activity');
+    if (!matchMedia('(max-width: 720px)').matches) document.getElementById('txList').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 
   function renderTx() {
     let list = inMonth(view).slice().sort((a, b) => b.date.localeCompare(a.date) || (a.type === 'income' ? -1 : 1));
